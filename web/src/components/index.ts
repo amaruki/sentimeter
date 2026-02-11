@@ -7,3 +7,5 @@ export { Navigation } from "./Navigation";
 export { LogPanel } from "./LogPanel";
 export { SchedulerPanel } from "./SchedulerPanel";
 export { SummaryTable } from "./SummaryTable";
+export { AvoidSection } from "./AvoidSection";
+export { MarketOutlookPanel } from "./MarketOutlookPanel";

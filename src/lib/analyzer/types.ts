@@ -93,6 +93,9 @@ export interface StockAnalysisResult {
   targetPrice: number;
   maxHoldDays: number;
 
+  // Order type
+  orderType: "LIMIT" | "MARKET";
+
   // Scores (0-100)
   sentimentScore: number;
   fundamentalScore: number;
@@ -137,6 +140,7 @@ export interface StockAnalysisResponse {
   stopLoss: number;
   targetPrice: number;
   maxHoldDays: number;
+  orderType?: "LIMIT" | "MARKET";
   scores: {
     sentiment: number;
     fundamental: number;

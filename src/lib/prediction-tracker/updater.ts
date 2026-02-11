@@ -138,6 +138,7 @@ function transformToTracked(rec: Recommendation, currentPrice: number): TrackedP
     stopLoss: rec.stopLoss,
     targetPrice: rec.targetPrice,
     maxHoldDays: rec.maxHoldDays,
+    orderType: rec.orderType ?? "LIMIT",
     status: rec.status,
     currentPrice,
     daysActive,

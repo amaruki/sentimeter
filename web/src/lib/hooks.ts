@@ -9,8 +9,21 @@ import type {
   HistoryParams,
   LogEntry,
   SchedulerState,
+  AvoidResponse,
+  MarketOutlookData,
+  TickerAnalysisResponse,
 } from "./types";
-import { getRecommendations, getHistory, triggerRefresh, getScheduler, startScheduler, stopScheduler } from "./api";
+import {
+  getRecommendations,
+  getHistory,
+  triggerRefresh,
+  getScheduler,
+  startScheduler,
+  stopScheduler,
+  getAvoidList,
+  getMarketOutlook,
+  analyzeTicker,
+} from "./api";
 
 interface UseQueryResult<T> {
   data: T | null;
@@ -186,4 +199,81 @@ export function useScheduler(): {
   }, [state?.enabled]);
 
   return { state, loading, toggle, refetch: fetchState };
+}
+
+export function useAvoidList(): UseQueryResult<AvoidResponse> {
+  const [data, setData] = useState<AvoidResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await getAvoidList();
+      setData(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
+
+  return { data, loading, error, refetch: fetchData };
+}
+
+export function useMarketOutlook(): UseQueryResult<MarketOutlookData | null> {
+  const [data, setData] = useState<MarketOutlookData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await getMarketOutlook();
+      setData(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
+
+  return { data, loading, error, refetch: fetchData };
+}
+
+export function useTickerAnalysis(): {
+  analyze: (ticker: string) => Promise<void>;
+  data: TickerAnalysisResponse | null;
+  loading: boolean;
+  error: string | null;
+} {
+  const [data, setData] = useState<TickerAnalysisResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const analyze = useCallback(async (ticker: string) => {
+    setLoading(true);
+    setError(null);
+    setData(null);
+    try {
+      const result = await analyzeTicker(ticker);
+      setData(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to analyze ticker");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { analyze, data, loading, error };
 }

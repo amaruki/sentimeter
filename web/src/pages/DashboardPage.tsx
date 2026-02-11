@@ -2,16 +2,18 @@
  * Dashboard Page
  */
 
-import { Card, LoadingState, ErrorState, EmptyState, StatsCard, LogPanel, SchedulerPanel, SummaryTable } from "@/components";
+import { Card, LoadingState, ErrorState, EmptyState, StatsCard, LogPanel, SchedulerPanel, SummaryTable, AvoidSection, MarketOutlookPanel } from "@/components";
 import { RecommendationCard } from "@/components/RecommendationCard";
 import { ActivePositionCard } from "@/components/ActivePositionCard";
-import { useRecommendations, useRefresh, useLogStream, useScheduler, formatPercent } from "@/lib";
+import { useRecommendations, useRefresh, useLogStream, useScheduler, useAvoidList, useMarketOutlook, formatPercent } from "@/lib";
 
 export function DashboardPage() {
   const { data, loading, error, refetch } = useRecommendations();
   const { trigger, loading: refreshing, result: refreshResult } = useRefresh();
   const { logs, connected, clear: clearLogs } = useLogStream();
   const { state: schedulerState, loading: schedulerLoading, toggle: toggleScheduler } = useScheduler();
+  const { data: avoidData } = useAvoidList();
+  const { data: outlookData } = useMarketOutlook();
 
   if (loading) return <LoadingState message="Loading recommendations..." />;
   if (error) return <ErrorState message={error} onRetry={refetch} />;
@@ -70,6 +72,8 @@ export function DashboardPage() {
 
       <LogPanel logs={logs} connected={connected} onClear={clearLogs} visible={refreshing || refreshResult?.triggered === true} />
 
+      {outlookData && <MarketOutlookPanel data={outlookData} />}
+
       <StatsCard stats={stats} />
 
       <SummaryTable
@@ -103,6 +107,10 @@ export function DashboardPage() {
           </div>
         )}
       </section>
+
+      {avoidData && avoidData.items.length > 0 && (
+        <AvoidSection items={avoidData.items} />
+      )}
     </div>
   );
 }

@@ -21,6 +21,8 @@ import {
   getActiveTickers,
 } from "../../lib/database/queries.ts";
 import type { JobSchedule } from "../../lib/database/types.ts";
+import { addAvoidItem, clearAvoidItems } from "../../lib/avoid-cache.ts";
+import { setMarketOutlook } from "../../lib/market-outlook-cache.ts";
 
 const MIN_OVERALL_SCORE = 65;
 const MAX_RECOMMENDATIONS_PER_RUN = 5;
@@ -32,9 +34,12 @@ export async function runAnalysisWithLogging(jobId: number, schedule: JobSchedul
 
   logEmitter.startJob(jobId);
 
+  // Clear previous avoid items at the start of each run
+  clearAvoidItems();
+
   try {
     // Step 1: Crawl news
-    logEmitter.step(1, 5, "Crawling news portals...");
+    logEmitter.step(1, 6, "Crawling news portals...");
     const crawlSummary = await crawlAllPortals();
     logEmitter.success(`Processed ${crawlSummary.totalNewArticles} new articles from ${crawlSummary.successfulPortals} portals`);
 
@@ -57,12 +62,12 @@ export async function runAnalysisWithLogging(jobId: number, schedule: JobSchedul
     logEmitter.info(`Filtered to ${articlesForExtraction.length} articles from last ${MAX_NEWS_AGE_DAYS} day(s)`);
 
     // Step 2: Extract tickers
-    logEmitter.step(2, 5, "Extracting tickers with AI...");
+    logEmitter.step(2, 6, "Extracting tickers with AI...");
     const tickerResult = await extractTickersFromNews(articlesForExtraction);
     logEmitter.success(`Found ${tickerResult.tickers.length} unique ticker mentions`);
 
     // Step 3: Aggregate tickers
-    logEmitter.step(3, 5, "Analyzing top tickers...");
+    logEmitter.step(3, 6, "Analyzing top tickers...");
 
     // Get tickers with active positions to exclude them
     const activeTickers = new Set(getActiveTickers());
@@ -79,7 +84,7 @@ export async function runAnalysisWithLogging(jobId: number, schedule: JobSchedul
     logEmitter.info(`Top tickers: ${topTickers.map((t) => t.ticker).join(", ") || "none"}`);
 
     // Step 4: Fetch market data and generate recommendations
-    logEmitter.step(4, 5, "Fetching market data and generating recommendations...");
+    logEmitter.step(4, 6, "Fetching market data and generating recommendations...");
     const recommendations: Array<{ ticker: string; score: number }> = [];
 
     const activePredictions = await getTrackedPredictions();
@@ -174,6 +179,7 @@ export async function runAnalysisWithLogging(jobId: number, schedule: JobSchedul
             stopLoss: analysis.stopLoss,
             targetPrice: analysis.targetPrice,
             maxHoldDays: analysis.maxHoldDays,
+            orderType: analysis.orderType,
             sentimentScore: analysis.sentimentScore,
             fundamentalScore: analysis.fundamentalScore,
             technicalScore: analysis.technicalScore,
@@ -184,7 +190,34 @@ export async function runAnalysisWithLogging(jobId: number, schedule: JobSchedul
             analysisSummary: analysis.analysisSummary,
           });
           recommendations.push({ ticker, score: analysis.overallScore });
-          logEmitter.success(`${ticker}: Score ${analysis.overallScore.toFixed(1)} - RECOMMENDED`);
+          logEmitter.success(`${ticker}: Score ${analysis.overallScore.toFixed(1)} - RECOMMENDED (${analysis.orderType})`);
+        } else if (analysis && analysis.action === "AVOID") {
+          // Collect AVOID items in-memory (not saved to DB)
+          const riskPct = analysis.entryPrice > 0
+            ? ((analysis.entryPrice - analysis.stopLoss) / analysis.entryPrice) * 100
+            : 0;
+          const rewardPct = analysis.entryPrice > 0
+            ? ((analysis.targetPrice - analysis.entryPrice) / analysis.entryPrice) * 100
+            : 0;
+          addAvoidItem({
+            ticker,
+            companyName: fundamentals?.companyName ?? ticker,
+            sector: fundamentals?.sector ?? null,
+            currentPrice: quote.price,
+            entryPrice: analysis.entryPrice,
+            stopLoss: analysis.stopLoss,
+            targetPrice: analysis.targetPrice,
+            overallScore: analysis.overallScore,
+            sentimentScore: analysis.sentimentScore,
+            fundamentalScore: analysis.fundamentalScore,
+            technicalScore: analysis.technicalScore,
+            analysisSummary: analysis.analysisSummary,
+            riskPercent: riskPct,
+            rewardPercent: rewardPct,
+            reason: analysis.analysisSummary,
+            detectedAt: new Date().toISOString(),
+          });
+          logEmitter.info(`${ticker}: Score ${analysis.overallScore.toFixed(1)} - AVOID (high risk)`);
         } else if (analysis) {
           logEmitter.info(`${ticker}: Score ${analysis.overallScore.toFixed(1)} - ${analysis.action}`);
         } else {
@@ -203,9 +236,68 @@ export async function runAnalysisWithLogging(jobId: number, schedule: JobSchedul
     logEmitter.success(`Generated ${recommendations.length} recommendations`);
 
     // Step 5: Update prediction statuses
-    logEmitter.step(5, 5, "Updating prediction statuses...");
+    logEmitter.step(5, 6, "Updating prediction statuses...");
     const updateResult = await updateAllPredictions();
     logEmitter.success(`Updated ${updateResult.updated} predictions`);
+
+    // Step 6: Generate market outlook from crawled news
+    logEmitter.step(6, 6, "Generating market outlook...");
+    try {
+      const bullishSignals: string[] = [];
+      const bearishSignals: string[] = [];
+      const globalNews: Array<{ title: string; sentiment: "positive" | "negative" | "neutral"; source: string }> = [];
+      const localNews: Array<{ title: string; sentiment: "positive" | "negative" | "neutral"; source: string }> = [];
+
+      for (const article of recentArticles.slice(0, 30)) {
+        const isGlobal = article.portal.toLowerCase().includes("cnbc") ||
+          article.portal.toLowerCase().includes("reuters") ||
+          article.portal.toLowerCase().includes("bloomberg");
+
+        const sentimentLabel: "positive" | "negative" | "neutral" = "neutral";
+        const entry = { title: article.title, sentiment: sentimentLabel, source: article.portal };
+
+        if (isGlobal) {
+          globalNews.push(entry);
+        } else {
+          localNews.push(entry);
+        }
+      }
+
+      // Derive sentiment from ticker extraction results
+      const avgSentiment = tickerResult.tickers.length > 0
+        ? tickerResult.tickers.reduce((sum, t) => sum + t.sentiment, 0) / tickerResult.tickers.length
+        : 0;
+
+      const positiveTickers = tickerResult.tickers.filter((t) => t.sentiment > 0.3);
+      const negativeTickers = tickerResult.tickers.filter((t) => t.sentiment < -0.3);
+
+      if (positiveTickers.length > 0) {
+        bullishSignals.push(`${positiveTickers.length} tickers with positive sentiment`);
+      }
+      if (negativeTickers.length > 0) {
+        bearishSignals.push(`${negativeTickers.length} tickers with negative sentiment`);
+      }
+      if (recommendations.length > 0) {
+        bullishSignals.push(`${recommendations.length} new BUY recommendations generated`);
+      }
+
+      const overallSentiment: "bullish" | "bearish" | "neutral" =
+        avgSentiment > 0.2 ? "bullish" : avgSentiment < -0.2 ? "bearish" : "neutral";
+
+      setMarketOutlook({
+        summary: `Market analysis based on ${recentArticles.length} articles. Average sentiment: ${avgSentiment.toFixed(2)}. ${recommendations.length} recommendations generated.`,
+        sentiment: overallSentiment,
+        bullishSignals,
+        bearishSignals,
+        globalNews: globalNews.slice(0, 5),
+        localNews: localNews.slice(0, 10),
+        generatedAt: new Date().toISOString(),
+      });
+      logEmitter.success("Market outlook generated");
+    } catch (outlookErr) {
+      const outlookMsg = outlookErr instanceof Error ? outlookErr.message : String(outlookErr);
+      logEmitter.warn(`Market outlook generation failed: ${outlookMsg}`);
+    }
 
     // Complete job
     completeJobExecution(jobId, {

@@ -61,6 +61,7 @@ export type RecommendationStatus =
   | "expired"; // Max hold days exceeded
 
 export type RecommendationAction = "BUY" | "HOLD" | "AVOID";
+export type OrderType = "LIMIT" | "MARKET";
 
 export interface Recommendation {
   id: number;
@@ -73,6 +74,9 @@ export interface Recommendation {
   stopLoss: number;
   targetPrice: number;
   maxHoldDays: number;
+
+  // Order type
+  orderType: OrderType;
 
   // Scores (0-100)
   sentimentScore: number;
@@ -104,6 +108,7 @@ export interface RecommendationInsert {
   stopLoss: number;
   targetPrice: number;
   maxHoldDays: number;
+  orderType?: OrderType;
   sentimentScore: number;
   fundamentalScore: number;
   technicalScore: number;

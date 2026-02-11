@@ -11,6 +11,9 @@ import { handleHistory } from "./routes/history.ts";
 import { handleRefresh } from "./routes/refresh.ts";
 import { handleLogs } from "./routes/logs.ts";
 import { handleGetScheduler, handleStartScheduler, handleStopScheduler } from "./routes/scheduler.ts";
+import { handleAvoid } from "./routes/avoid.ts";
+import { handleMarketOutlook } from "./routes/market-outlook.ts";
+import { handleAnalyzeTicker } from "./routes/analyze-ticker.ts";
 import { initDatabase } from "../lib/database/schema.ts";
 
 const PORT = parseInt(process.env.PORT ?? "3001", 10);
@@ -81,6 +84,18 @@ const server = Bun.serve({
         return handleStopScheduler(request);
       }
 
+      if (path === "/api/avoid" && method === "GET") {
+        return handleAvoid(request);
+      }
+
+      if (path === "/api/market-outlook" && method === "GET") {
+        return handleMarketOutlook(request);
+      }
+
+      if (path === "/api/analyze-ticker" && method === "POST") {
+        return await handleAnalyzeTicker(request);
+      }
+
       // 404 Not Found
       return jsonResponse(errorResponse(`Not found: ${path}`), 404, origin);
     } catch (error) {
@@ -107,4 +122,7 @@ Available endpoints:
   GET  /api/scheduler        - Get scheduler state
   POST /api/scheduler/start  - Start scheduler
   POST /api/scheduler/stop   - Stop scheduler
+  GET  /api/avoid            - Get avoid/unrecommended tickers
+  GET  /api/market-outlook   - Get market outlook & sentiment
+  POST /api/analyze-ticker   - Analyze individual ticker
 `);
