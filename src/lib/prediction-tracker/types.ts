@@ -59,6 +59,7 @@ export interface TrackingResult {
   updated: number;
   statusUpdates: StatusUpdate[];
   errors: string[];
+  currentPrices: Record<string, number>;
 }
 
 export interface PredictionSummary {

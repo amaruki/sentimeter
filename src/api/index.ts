@@ -10,8 +10,15 @@ import { handleRecommendations } from "./routes/recommendations.ts";
 import { handleHistory } from "./routes/history.ts";
 import { handleRefresh } from "./routes/refresh.ts";
 import { handleLogs } from "./routes/logs.ts";
-import { handleGetScheduler, handleStartScheduler, handleStopScheduler } from "./routes/scheduler.ts";
+import {
+  handleGetScheduler,
+  handleStartScheduler,
+  handleStopScheduler,
+} from "./routes/scheduler.ts";
 import { initDatabase } from "../lib/database/schema.ts";
+import { startMonitoring, setBroadcastFn } from "../services/monitor.ts";
+import { websocketHandler, broadcast } from "./websocket.ts";
+import type { Server } from "bun";
 
 const PORT = parseInt(process.env.PORT ?? "3001", 10);
 
@@ -19,15 +26,29 @@ const PORT = parseInt(process.env.PORT ?? "3001", 10);
 console.log("🗃️  Initializing database...");
 initDatabase();
 
+// Initialize price monitor
+console.log("⏱️  Initializing price monitor...");
+setBroadcastFn(broadcast);
+startMonitoring(15000);
+
 console.log(`🚀 Starting Sentimeter API server on port ${PORT}...`);
 
 const server = Bun.serve({
   port: PORT,
   idleTimeout: 120, // 2 minutes for SSE connections
 
-  async fetch(request: Request): Promise<Response> {
+  async fetch(request: Request, server: Server): Promise<Response | undefined> {
     const url = new URL(request.url);
     const path = url.pathname;
+
+    // Handle WebSocket upgrade
+    if (path === "/ws") {
+      if (server.upgrade(request, { data: { createdAt: Date.now() } })) {
+        return undefined;
+      }
+      return new Response("WebSocket upgrade failed", { status: 400 });
+    }
+
     const method = request.method;
     const origin = request.headers.get("Origin");
 
@@ -90,6 +111,8 @@ const server = Bun.serve({
     }
   },
 
+  websocket: websocketHandler,
+
   error(error: Error): Response {
     console.error("Unhandled error:", error);
     return jsonResponse(errorResponse("Internal server error"), 500, null);
@@ -104,6 +127,7 @@ Available endpoints:
   GET  /api/history          - Get historical recommendations
   POST /api/refresh          - Trigger manual analysis refresh
   GET  /api/logs             - SSE stream for live analysis logs
+  GET  /ws                   - WebSocket endpoint
   GET  /api/scheduler        - Get scheduler state
   POST /api/scheduler/start  - Start scheduler
   POST /api/scheduler/stop   - Stop scheduler

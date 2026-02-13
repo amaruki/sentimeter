@@ -187,3 +187,65 @@ export function useScheduler(): {
 
   return { state, loading, toggle, refetch: fetchState };
 }
+
+export function useWebSocket(
+  url: string,
+  onMessage?: (data: any) => void
+): { isConnected: boolean; lastMessage: any } {
+  const [isConnected, setIsConnected] = useState(false);
+  const [lastMessage, setLastMessage] = useState<any>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const onMessageRef = useRef(onMessage);
+
+  useEffect(() => {
+    onMessageRef.current = onMessage;
+  }, [onMessage]);
+
+  useEffect(() => {
+    let retryTimeout: ReturnType<typeof setTimeout>;
+
+    function connect() {
+      // Construct full URL
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const host = window.location.host;
+      const fullUrl = url.startsWith("/") ? `${protocol}//${host}${url}` : url;
+
+      const ws = new WebSocket(fullUrl);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        setIsConnected(true);
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          setLastMessage(data);
+          if (onMessageRef.current) {
+            onMessageRef.current(data);
+          }
+        } catch (e) {
+          console.error("Failed to parse WebSocket message", e);
+        }
+      };
+
+      ws.onclose = () => {
+        setIsConnected(false);
+        retryTimeout = setTimeout(connect, 3000);
+      };
+
+      ws.onerror = () => {
+        ws.close();
+      };
+    }
+
+    connect();
+
+    return () => {
+      clearTimeout(retryTimeout);
+      wsRef.current?.close();
+    };
+  }, [url]);
+
+  return { isConnected, lastMessage };
+}

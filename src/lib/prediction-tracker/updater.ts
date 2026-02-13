@@ -29,6 +29,7 @@ export async function updateAllPredictions(): Promise<TrackingResult> {
     updated: 0,
     statusUpdates: [],
     errors: [],
+    currentPrices: {},
   };
 
   // Get all active recommendations
@@ -49,6 +50,7 @@ export async function updateAllPredictions(): Promise<TrackingResult> {
       const quoteResult = await fetchCurrentQuote(ticker);
       if (quoteResult.success && quoteResult.data) {
         priceMap.set(ticker, quoteResult.data.price);
+        result.currentPrices[ticker] = quoteResult.data.price;
       }
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);

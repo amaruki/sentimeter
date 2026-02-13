@@ -2,3 +2,4 @@ export { getRecommendations, getHistory, triggerRefresh, getScheduler, startSche
 export { useRecommendations, useHistory, useRefresh, useLogStream, useScheduler } from "./hooks";
 export * from "./types";
 export * from "./format";
+export { useWebSocket } from "./hooks";
