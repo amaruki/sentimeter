@@ -90,6 +90,13 @@ export function DashboardPage() {
           // Refresh data to get consistent state
           void refetch();
         });
+      } else if (message.type === "ANOMALY_DETECTED") {
+        message.anomalies.forEach((anomaly: any) => {
+          showToast(
+            `Anomaly: ${anomaly.ticker} ${anomaly.type} (${anomaly.value.toFixed(2)}%)`,
+            "warning"
+          );
+        });
       }
     },
     [showToast, refetch]

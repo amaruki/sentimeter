@@ -18,4 +18,10 @@ export const config = {
     botToken: process.env.TELEGRAM_BOT_TOKEN,
     chatId: process.env.TELEGRAM_CHAT_ID,
   },
+
+  // Anomaly Detection
+  anomaly: {
+    priceChangePct: parseFloat(process.env.ANOMALY_PRICE_CHANGE_PCT ?? "5.0"),
+    volumeMultiplier: parseFloat(process.env.ANOMALY_VOLUME_MULTIPLIER ?? "3.0"),
+  },
 };

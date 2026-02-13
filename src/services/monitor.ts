@@ -10,10 +10,15 @@ import { sendTelegramNotification } from "../lib/notifications/index.ts";
 import type {
   StatusUpdate,
   PredictionStatus,
+  AnomalyDetected,
 } from "../lib/prediction-tracker/types.ts";
+import { detectAnomalies } from "../lib/analyzer/anomaly-detector.ts";
+import { fetchCurrentQuote } from "../lib/market-data/index.ts";
+import { analyzeAnomaly } from "../lib/analyzer/anomaly-analyzer.ts";
 
 let intervalId: ReturnType<typeof setInterval> | null = null;
 let broadcastFn: ((data: any) => void) | null = null;
+const anomalyCooldowns = new Map<string, number>();
 
 /**
  * Set the broadcast function for WebSocket updates
@@ -67,7 +72,6 @@ async function runCheck() {
 
     // 2. Handle status updates
     if (result.statusUpdates.length > 0) {
-      // Broadcast updates
       if (broadcastFn) {
         broadcastFn({
           type: "STATUS_UPDATE",
@@ -75,11 +79,60 @@ async function runCheck() {
         });
       }
 
-      // Send notifications
       for (const update of result.statusUpdates) {
         await notifyStatusChange(update);
       }
     }
+
+    // 3. Anomaly Detection
+    // Check tickers that have current prices
+    for (const ticker of Object.keys(result.currentPrices)) {
+      // Respect cooldown (e.g., 1 hour per ticker) to avoid spam
+      const lastAlert = anomalyCooldowns.get(ticker);
+      if (lastAlert && Date.now() - lastAlert < 3600000) {
+        continue;
+      }
+
+      // We need the full quote for volume, so we might need to fetch it or rely on what we have.
+      // Ideally updateAllPredictions should return full quotes if we want to be efficient.
+      // For now, let's re-fetch quote if we want accurate volume, OR
+      // assume updateAllPredictions is optimized enough (it fetches internally).
+      // Optimization: Let's fetch quote here only if we suspect something or just use the price we have?
+      // Actually, detectAnomalies needs volume. Let's fetch quote again (cached ideally) or rely on a shared cache.
+      // Since fetchCurrentQuote caches for a short time or we can just call it.
+
+      const quoteResult = await fetchCurrentQuote(ticker);
+      if (!quoteResult.success || !quoteResult.data) continue;
+
+      const anomalies = detectAnomalies(ticker, quoteResult.data);
+
+      if (anomalies.length > 0) {
+        anomalyCooldowns.set(ticker, Date.now());
+
+        // Call LLM for analysis
+        let analysis = "";
+        try {
+            analysis = await analyzeAnomaly(ticker, anomalies[0], quoteResult.data);
+        } catch (e) {
+            console.error(`Failed to analyze anomaly for ${ticker}:`, e);
+        }
+
+        // Notify
+        for (const anomaly of anomalies) {
+          await notifyAnomaly(anomaly, analysis);
+        }
+
+        // Broadcast
+        if (broadcastFn) {
+          broadcastFn({
+            type: "ANOMALY_DETECTED",
+            anomalies,
+            analysis
+          });
+        }
+      }
+    }
+
   } catch (error) {
     console.error("❌ Monitor error:", error);
   }
@@ -99,6 +152,22 @@ Time: ${update.timestamp.toLocaleTimeString("id-ID")}
   `.trim();
 
   await sendTelegramNotification(message);
+}
+
+async function notifyAnomaly(anomaly: AnomalyDetected, analysis: string) {
+    const emoji = anomaly.type === "PRICE" ? "🚀" : "🔊";
+    const message = `
+${emoji} *${anomaly.ticker} Anomaly Detected*
+
+Type: ${anomaly.type}
+Value: ${anomaly.type === "PRICE" ? anomaly.value.toFixed(2) + "%" : anomaly.value}
+Message: ${anomaly.message}
+
+🤖 *AI Analysis:*
+${analysis}
+    `.trim();
+
+    await sendTelegramNotification(message);
 }
 
 function getStatusEmoji(status: PredictionStatus): string {

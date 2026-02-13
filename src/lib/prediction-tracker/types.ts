@@ -60,6 +60,16 @@ export interface TrackingResult {
   statusUpdates: StatusUpdate[];
   errors: string[];
   currentPrices: Record<string, number>;
+  anomalies?: AnomalyDetected[];
+}
+
+export interface AnomalyDetected {
+  ticker: string;
+  type: "PRICE" | "VOLUME";
+  value: number;
+  threshold: number;
+  message: string;
+  timestamp: string;
 }
 
 export interface PredictionSummary {

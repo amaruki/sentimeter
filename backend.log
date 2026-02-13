@@ -1,0 +1,20 @@
+🗃️  Initializing database...
+⏱️  Initializing price monitor...
+⏱️  Starting price monitor (every 15000ms)...
+🚀 Starting Sentimeter API server on port 3001...
+31 | setBroadcastFn(broadcast);
+32 | startMonitoring(15000);
+33 |
+34 | console.log(`🚀 Starting Sentimeter API server on port ${PORT}...`);
+35 |
+36 | const server = Bun.serve({
+                        ^
+error: Failed to start server. Is port 3001 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at /app/src/api/index.ts:36:20
+      at loadAndEvaluateModule (2:1)
+
+Bun v1.2.14 (Linux x64 baseline)

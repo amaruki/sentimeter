@@ -23,6 +23,7 @@ export interface YahooQuoteData {
   regularMarketVolume?: number;
   regularMarketChange?: number;
   regularMarketChangePercent?: number;
+  averageDailyVolume10Day?: number;
   marketState?: string;
   shortName?: string;
   longName?: string;
