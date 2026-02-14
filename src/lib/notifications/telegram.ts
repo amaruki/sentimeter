@@ -5,12 +5,13 @@
  */
 
 import { config } from "../config.ts";
+import { getEffectiveConfig } from "../config-overrides.ts";
 
 /**
  * Send a message to the configured Telegram chat
  */
 export async function sendTelegramNotification(message: string): Promise<void> {
-  const { botToken, chatId } = config.telegram;
+  const { botToken, chatId } = getEffectiveConfig(config).telegram;
 
   if (!botToken || !chatId) {
     // Silent return if not configured, or maybe log a warning once

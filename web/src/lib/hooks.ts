@@ -9,8 +9,17 @@ import type {
   HistoryParams,
   LogEntry,
   SchedulerState,
+  AppConfig,
 } from "./types";
-import { getRecommendations, getHistory, triggerRefresh, getScheduler, startScheduler, stopScheduler } from "./api";
+import {
+  getRecommendations,
+  getHistory,
+  triggerRefresh,
+  getConfig,
+  getScheduler,
+  startScheduler,
+  stopScheduler,
+} from "./api";
 
 interface UseQueryResult<T> {
   data: T | null;
@@ -186,6 +195,36 @@ export function useScheduler(): {
   }, [state?.enabled]);
 
   return { state, loading, toggle, refetch: fetchState };
+}
+
+export function useConfig(): {
+  data: AppConfig | null;
+  loading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+} {
+  const [data, setData] = useState<AppConfig | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await getConfig();
+      setData(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load config");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
+
+  return { data, loading, error, refetch: fetchData };
 }
 
 export function useWebSocket(

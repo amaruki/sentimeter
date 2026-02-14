@@ -9,7 +9,6 @@ import {
   EmptyState,
   StatsCard,
   LogPanel,
-  SchedulerPanel,
   SummaryTable,
   useToast,
 } from "@/components";
@@ -19,7 +18,6 @@ import {
   useRecommendations,
   useRefresh,
   useLogStream,
-  useScheduler,
   useWebSocket,
   formatPercent,
   type ActivePositionItem,
@@ -30,11 +28,6 @@ export function DashboardPage() {
   const { data, loading, error, refetch } = useRecommendations();
   const { trigger, loading: refreshing, result: refreshResult } = useRefresh();
   const { logs, connected, clear: clearLogs } = useLogStream();
-  const {
-    state: schedulerState,
-    loading: schedulerLoading,
-    toggle: toggleScheduler,
-  } = useScheduler();
   const { showToast } = useToast();
 
   const [activePositions, setActivePositions] = useState<ActivePositionItem[]>([]);
@@ -158,14 +151,6 @@ export function DashboardPage() {
             </>
           )}
         </button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <SchedulerPanel
-          state={schedulerState}
-          loading={schedulerLoading}
-          onToggle={() => void toggleScheduler()}
-        />
       </div>
 
       {refreshResult && (

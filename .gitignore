@@ -38,3 +38,4 @@ data/*.sqlite
 data/*.db
 data/*.db-shm
 data/*.db-wal
+data/config-overrides.json

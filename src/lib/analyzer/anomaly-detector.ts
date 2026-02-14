@@ -5,6 +5,7 @@
  */
 
 import { config } from "../config.ts";
+import { getEffectiveConfig } from "../config-overrides.ts";
 import type { StockQuote } from "../market-data/types.ts";
 import type { AnomalyDetected } from "../prediction-tracker/types.ts";
 
@@ -13,7 +14,7 @@ export function detectAnomalies(
   quote: StockQuote
 ): AnomalyDetected[] {
   const anomalies: AnomalyDetected[] = [];
-  const { priceChangePct, volumeMultiplier } = config.anomaly;
+  const { priceChangePct, volumeMultiplier } = getEffectiveConfig(config).anomaly;
 
   // 1. Price Anomaly
   // Check if absolute percentage change is greater than threshold

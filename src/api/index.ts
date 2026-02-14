@@ -15,6 +15,8 @@ import {
   handleStartScheduler,
   handleStopScheduler,
 } from "./routes/scheduler.ts";
+import { handleGetConfig, handlePatchConfig } from "./routes/config.ts";
+import { loadOverrides } from "../lib/config-overrides.ts";
 import { initDatabase } from "../lib/database/schema.ts";
 import { startMonitoring, setBroadcastFn } from "../services/monitor.ts";
 import { websocketHandler, broadcast } from "./websocket.ts";
@@ -26,6 +28,9 @@ const PORT = parseInt(process.env.PORT ?? "3001", 10);
 // Initialize database on startup
 console.log("🗃️  Initializing database...");
 initDatabase();
+
+// Load config overrides so scheduler and GET /api/config use them
+loadOverrides();
 
 // Initialize price monitor
 console.log("⏱️  Initializing price monitor...");
@@ -91,6 +96,13 @@ const server = Bun.serve({
         return handleLogs(request);
       }
 
+      if (path === "/api/config" && method === "GET") {
+        return handleGetConfig(request);
+      }
+      if (path === "/api/config" && method === "PATCH") {
+        return await handlePatchConfig(request);
+      }
+
       if (path === "/api/scheduler" && method === "GET") {
         return handleGetScheduler(request);
       }
@@ -129,6 +141,8 @@ Available endpoints:
   POST /api/refresh          - Trigger manual analysis refresh
   GET  /api/logs             - SSE stream for live analysis logs
   GET  /ws                   - WebSocket endpoint
+  GET   /api/config           - Get app config
+  PATCH /api/config           - Update config overrides
   GET  /api/scheduler        - Get scheduler state
   POST /api/scheduler/start  - Start scheduler
   POST /api/scheduler/stop   - Stop scheduler
