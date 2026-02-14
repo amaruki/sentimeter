@@ -30,6 +30,31 @@ export default defineConfig({
       "/ws": {
         target: "ws://localhost:3001",
         ws: true,
+        changeOrigin: true,
+        configure: (proxy) => {
+          proxy.on("error", (err, _req, _res) => {
+            // Silence proxy errors which are often just client disconnects
+            if (err.message.includes("ECONNRESET") || err.message.includes("ECONNABORTED")) {
+              return;
+            }
+            console.error("proxy error", err);
+          });
+          proxy.on("proxyReqWs", (proxyReq, _req, socket) => {
+            const destroyTarget = (): void => {
+              const targetSocket = proxyReq.socket ?? (proxyReq as unknown as { socket?: NodeJS.Socket }).socket;
+              if (targetSocket && !targetSocket.destroyed) {
+                targetSocket.destroy();
+              }
+            };
+            socket.on("error", (err: Error) => {
+              if (!err.message.includes("ECONNRESET") && !err.message.includes("ECONNABORTED")) {
+                console.error("socket error", err);
+              }
+              destroyTarget();
+            });
+            socket.on("close", destroyTarget);
+          });
+        },
       },
     },
   },

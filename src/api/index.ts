@@ -18,6 +18,7 @@ import {
 import { initDatabase } from "../lib/database/schema.ts";
 import { startMonitoring, setBroadcastFn } from "../services/monitor.ts";
 import { websocketHandler, broadcast } from "./websocket.ts";
+import type { WebSocketData } from "./websocket.ts";
 import type { Server } from "bun";
 
 const PORT = parseInt(process.env.PORT ?? "3001", 10);
@@ -37,7 +38,7 @@ const server = Bun.serve({
   port: PORT,
   idleTimeout: 120, // 2 minutes for SSE connections
 
-  async fetch(request: Request, server: Server): Promise<Response | undefined> {
+  async fetch(request: Request, server: Server<WebSocketData>): Promise<Response | undefined> {
     const url = new URL(request.url);
     const path = url.pathname;
 

@@ -17,6 +17,7 @@ import { fetchCurrentQuote } from "../lib/market-data/index.ts";
 import { analyzeAnomaly } from "../lib/analyzer/anomaly-analyzer.ts";
 
 let intervalId: ReturnType<typeof setInterval> | null = null;
+let clockIntervalId: ReturnType<typeof setInterval> | null = null;
 let broadcastFn: ((data: any) => void) | null = null;
 const anomalyCooldowns = new Map<string, number>();
 
@@ -25,6 +26,32 @@ const anomalyCooldowns = new Map<string, number>();
  */
 export function setBroadcastFn(fn: (data: any) => void) {
   broadcastFn = fn;
+}
+
+/**
+ * Start the heartbeat clock
+ */
+function startClock() {
+  if (clockIntervalId) return;
+
+  clockIntervalId = setInterval(() => {
+    if (broadcastFn) {
+      broadcastFn({
+        type: "HEARTBEAT",
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }, 1000);
+}
+
+/**
+ * Stop the heartbeat clock
+ */
+function stopClock() {
+  if (clockIntervalId) {
+    clearInterval(clockIntervalId);
+    clockIntervalId = null;
+  }
 }
 
 /**
@@ -40,6 +67,7 @@ export function startMonitoring(intervalMs: number = 15000) {
 
   // Run immediately first
   void runCheck();
+  startClock();
 
   intervalId = setInterval(() => {
     void runCheck();
@@ -53,6 +81,7 @@ export function stopMonitoring() {
   if (intervalId) {
     clearInterval(intervalId);
     intervalId = null;
+    stopClock();
     console.log("🛑 Price monitor stopped.");
   }
 }
@@ -111,10 +140,14 @@ async function runCheck() {
 
         // Call LLM for analysis
         let analysis = "";
-        try {
-            analysis = await analyzeAnomaly(ticker, anomalies[0], quoteResult.data);
-        } catch (e) {
-            console.error(`Failed to analyze anomaly for ${ticker}:`, e);
+        const firstAnomaly = anomalies[0];
+        
+        if (firstAnomaly) {
+          try {
+              analysis = await analyzeAnomaly(ticker, firstAnomaly, quoteResult.data);
+          } catch (e) {
+              console.error(`Failed to analyze anomaly for ${ticker}:`, e);
+          }
         }
 
         // Notify

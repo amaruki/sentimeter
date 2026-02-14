@@ -383,7 +383,7 @@ bun run src/jobs/scheduler.ts
 The scheduler runs the analysis automatically at:
 
 - Morning: 7:30 WIB (before market open)
-- Evening: 16:30 WIB (after market close)
+- Evening: 15:30 WIB (after market close)
 
 ## API Reference
 

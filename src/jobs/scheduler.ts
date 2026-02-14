@@ -3,7 +3,7 @@
  *
  * Schedules and runs the daily analysis jobs using cron-like timing.
  * Morning run: 7:30 WIB (00:30 UTC)
- * Evening run: 16:30 WIB (09:30 UTC)
+ * Evening run: 15:30 WIB (08:30 UTC)
  */
 
 import { runDailyAnalysis } from "./daily-analysis.ts";
@@ -11,7 +11,7 @@ import type { JobSchedule } from "../lib/database/types.ts";
 
 const MORNING_HOUR = 7;
 const MORNING_MINUTE = 30;
-const EVENING_HOUR = 16;
+const EVENING_HOUR = 15;
 const EVENING_MINUTE = 30;
 
 interface ScheduledJob {

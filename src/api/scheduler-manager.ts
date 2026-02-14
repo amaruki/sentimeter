@@ -10,7 +10,7 @@ import { logEmitter } from "./log-emitter.ts";
 
 const MORNING_HOUR = 7;
 const MORNING_MINUTE = 30;
-const EVENING_HOUR = 16;
+const EVENING_HOUR = 15;
 const EVENING_MINUTE = 30;
 
 interface ScheduledJob {

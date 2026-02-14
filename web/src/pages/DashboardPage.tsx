@@ -38,6 +38,7 @@ export function DashboardPage() {
   const { showToast } = useToast();
 
   const [activePositions, setActivePositions] = useState<ActivePositionItem[]>([]);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   // Initialize active positions from API data
   useEffect(() => {
@@ -69,8 +70,8 @@ export function DashboardPage() {
             update.newStatus === "target_hit"
               ? "success"
               : update.newStatus === "sl_hit"
-              ? "error"
-              : "info";
+                ? "error"
+                : "info";
 
           showToast(
             `${update.ticker}: ${update.previousStatus} ⮕ ${update.newStatus}`,
@@ -97,6 +98,8 @@ export function DashboardPage() {
             "warning"
           );
         });
+      } else if (message.type === "HEARTBEAT") {
+        setCurrentTime(new Date(message.timestamp));
       }
     },
     [showToast, refetch]
@@ -132,7 +135,7 @@ export function DashboardPage() {
           </h1>
           <p className="text-gray-500">
             {data.schedule === "morning" ? "Morning" : "Evening"} session -{" "}
-            {new Date(data.generatedAt).toLocaleTimeString("id-ID")}
+            {currentTime.toLocaleTimeString("id-ID")}
             {isConnected && (
               <span className="ml-2 text-success-600 text-xs font-medium px-2 py-0.5 bg-success-50 rounded-full animate-pulse">
                 ● Live
