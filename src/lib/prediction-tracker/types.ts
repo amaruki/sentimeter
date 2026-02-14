@@ -22,6 +22,9 @@ export interface TrackedPrediction {
   targetPrice: number;
   maxHoldDays: number;
 
+  // Order type
+  orderType: "LIMIT" | "MARKET";
+
   // Current state
   status: PredictionStatus;
   currentPrice: number;

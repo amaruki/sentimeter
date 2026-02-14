@@ -38,10 +38,13 @@ export async function handleRecommendations(request: Request): Promise<Response>
       transformRecommendation(rec)
     );
 
-    // Get active positions
+    // Get active positions, excluding tickers already in today's recommendations
+    // to prevent duplicates showing as both NEW and HOLD in the summary table
+    const todayTickers = new Set(recommendations.map((r) => r.ticker));
     const trackedPredictions = await getTrackedPredictions();
     const activePositions: ActivePositionItem[] = trackedPredictions
       .filter((p) => p.status === "pending" || p.status === "entry_hit")
+      .filter((p) => !todayTickers.has(p.ticker))
       .map((p) => ({
         ticker: p.ticker,
         companyName: getCompanyName(p.ticker),

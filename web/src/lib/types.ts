@@ -136,6 +136,102 @@ export interface SchedulerState {
   message?: string;
 }
 
+// ============================================================================
+// Avoid / Unrecommended (display-only, not saved)
+// ============================================================================
+
+export interface AvoidItem {
+  ticker: string;
+  companyName: string;
+  sector: string | null;
+  currentPrice: number;
+  entryPrice: number;
+  stopLoss: number;
+  targetPrice: number;
+  overallScore: number;
+  sentimentScore: number;
+  fundamentalScore: number;
+  technicalScore: number;
+  analysisSummary: string;
+  riskPercent: number;
+  rewardPercent: number;
+  reason: string;
+  detectedAt: string;
+}
+
+export interface AvoidResponse {
+  items: AvoidItem[];
+  count: number;
+}
+
+// ============================================================================
+// Market Outlook
+// ============================================================================
+
+export interface NewsHighlight {
+  title: string;
+  sentiment: "positive" | "negative" | "neutral";
+  source: string;
+}
+
+export interface MarketOutlookData {
+  summary: string;
+  sentiment: "bullish" | "bearish" | "neutral";
+  bullishSignals: string[];
+  bearishSignals: string[];
+  globalNews: NewsHighlight[];
+  localNews: NewsHighlight[];
+  generatedAt: string;
+}
+
+// ============================================================================
+// Ticker Analysis
+// ============================================================================
+
+export interface TickerAnalysisResponse {
+  ticker: string;
+  companyName: string;
+  sector: string | null;
+  currentPrice: number;
+  priceChange: number;
+  priceChangePct: number;
+  fundamentals: {
+    peRatio: number | null;
+    pbRatio: number | null;
+    roe: number | null;
+    debtToEquity: number | null;
+    dividendYield: number | null;
+    marketCap: number | null;
+  };
+  technical: {
+    trend: string;
+    sma20: number | null;
+    sma50: number | null;
+    high3Month: number;
+    low3Month: number;
+    supports: number[];
+    resistances: number[];
+    volatilityPercent: number;
+  };
+  relevantNews: Array<{ title: string; portal: string; publishedAt: string | null }>;
+  analysis: {
+    action: string;
+    confidence: number;
+    entryPrice: number;
+    stopLoss: number;
+    targetPrice: number;
+    maxHoldDays: number;
+    overallScore: number;
+    sentimentScore: number;
+    fundamentalScore: number;
+    technicalScore: number;
+    analysisSummary: string;
+    newsSummary: string;
+    fundamentalSummary: string;
+    technicalSummary: string;
+  } | null;
+}
+
 export interface AppConfig {
   scheduler: {
     morningHour: number;

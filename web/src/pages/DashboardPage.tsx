@@ -9,7 +9,7 @@ import {
   EmptyState,
   StatsCard,
   LogPanel,
-  SummaryTable,
+  SummaryTable, AvoidSection, MarketOutlookPanel,
   useToast,
 } from "@/components";
 import { RecommendationCard } from "@/components/RecommendationCard";
@@ -19,7 +19,7 @@ import {
   useRefresh,
   useLogStream,
   useWebSocket,
-  formatPercent,
+  useAvoidList, useMarketOutlook, formatPercent,
   type ActivePositionItem,
 } from "@/lib";
 import { useState, useEffect, useCallback } from "react";
@@ -99,6 +99,8 @@ export function DashboardPage() {
   );
 
   const { isConnected } = useWebSocket("/ws", handleWebSocketMessage);
+  const { data: avoidData } = useAvoidList();
+  const { data: outlookData } = useMarketOutlook();
 
   if (loading) return <LoadingState message="Loading recommendations..." />;
   if (error) return <ErrorState message={error} onRetry={refetch} />;
@@ -178,6 +180,8 @@ export function DashboardPage() {
         visible={refreshing || refreshResult?.triggered === true}
       />
 
+      {outlookData && <MarketOutlookPanel data={outlookData} />}
+
       <StatsCard stats={stats} />
 
       <SummaryTable
@@ -219,6 +223,10 @@ export function DashboardPage() {
           </div>
         )}
       </section>
+
+      {avoidData && avoidData.items.length > 0 && (
+        <AvoidSection items={avoidData.items} />
+      )}
     </div>
   );
 }

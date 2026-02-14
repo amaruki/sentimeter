@@ -6,14 +6,14 @@ export {
   patchConfig,
   getScheduler,
   startScheduler,
-  stopScheduler,
+  stopScheduler, getAvoidList, getMarketOutlook, analyzeTicker,
 } from "./api";
 export {
   useRecommendations,
   useHistory,
   useRefresh,
   useLogStream,
-  useScheduler,
+  useScheduler, useAvoidList, useMarketOutlook, useTickerAnalysis,
   useConfig,
 } from "./hooks";
 export * from "./types";

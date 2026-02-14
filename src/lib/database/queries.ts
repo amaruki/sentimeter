@@ -152,12 +152,12 @@ export function insertRecommendation(rec: RecommendationInsert): number {
   const stmt = db.prepare(`
     INSERT OR REPLACE INTO recommendations (
       ticker, recommendation_date, action,
-      entry_price, stop_loss, target_price, max_hold_days,
+      entry_price, stop_loss, target_price, max_hold_days, order_type,
       sentiment_score, fundamental_score, technical_score, overall_score,
       analysis_summary, news_summary, fundamental_summary, technical_summary
     ) VALUES (
       $ticker, $recommendationDate, $action,
-      $entryPrice, $stopLoss, $targetPrice, $maxHoldDays,
+      $entryPrice, $stopLoss, $targetPrice, $maxHoldDays, $orderType,
       $sentimentScore, $fundamentalScore, $technicalScore, $overallScore,
       $analysisSummary, $newsSummary, $fundamentalSummary, $technicalSummary
     )
@@ -171,6 +171,7 @@ export function insertRecommendation(rec: RecommendationInsert): number {
     $stopLoss: rec.stopLoss,
     $targetPrice: rec.targetPrice,
     $maxHoldDays: rec.maxHoldDays,
+    $orderType: rec.orderType ?? "LIMIT",
     $sentimentScore: rec.sentimentScore,
     $fundamentalScore: rec.fundamentalScore,
     $technicalScore: rec.technicalScore,
@@ -189,7 +190,8 @@ export function getRecommendationsByDate(date: string): Recommendation[] {
     SELECT
       id, ticker, recommendation_date as recommendationDate, action,
       entry_price as entryPrice, stop_loss as stopLoss, target_price as targetPrice,
-      max_hold_days as maxHoldDays, sentiment_score as sentimentScore,
+      max_hold_days as maxHoldDays, COALESCE(order_type, 'LIMIT') as orderType,
+      sentiment_score as sentimentScore,
       fundamental_score as fundamentalScore, technical_score as technicalScore,
       overall_score as overallScore, analysis_summary as analysisSummary,
       news_summary as newsSummary, fundamental_summary as fundamentalSummary,
@@ -215,6 +217,7 @@ export function getTodayRecommendations(): Recommendation[] {
       stop_loss as stopLoss,
       target_price as targetPrice,
       max_hold_days as maxHoldDays,
+      COALESCE(order_type, 'LIMIT') as orderType,
       sentiment_score as sentimentScore,
       fundamental_score as fundamentalScore,
       technical_score as technicalScore,
@@ -242,7 +245,8 @@ export function getActiveRecommendations(): Recommendation[] {
     SELECT
       id, ticker, recommendation_date as recommendationDate, action,
       entry_price as entryPrice, stop_loss as stopLoss, target_price as targetPrice,
-      max_hold_days as maxHoldDays, sentiment_score as sentimentScore,
+      max_hold_days as maxHoldDays, COALESCE(order_type, 'LIMIT') as orderType,
+      sentiment_score as sentimentScore,
       fundamental_score as fundamentalScore, technical_score as technicalScore,
       overall_score as overallScore, analysis_summary as analysisSummary,
       news_summary as newsSummary, fundamental_summary as fundamentalSummary,

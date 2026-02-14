@@ -6,6 +6,8 @@
 
 import type { PredictionStatus, StatusUpdate, TrackedPrediction } from "./types.ts";
 
+const STALE_PENDING_DAYS = 3;
+
 /**
  * Check if prediction status should change based on current price
  */
@@ -23,19 +25,37 @@ export function checkStatusChange(
 
   // Pending - check if entry price is hit
   if (status === "pending") {
-    if (isPriceHit(currentPrice, entryPrice)) {
+    // For LIMIT orders: do NOT auto-transition to entry_hit.
+    // Entry should only happen after market close (manual or scheduled).
+    // For MARKET orders: auto-transition when price is hit.
+    const orderType = prediction.orderType ?? "LIMIT";
+
+    if (orderType === "MARKET" && isPriceHit(currentPrice, entryPrice)) {
       return {
         id,
         ticker,
         previousStatus: status,
         newStatus: "entry_hit",
         price: currentPrice,
-        reason: `Entry price ${entryPrice} reached at ${currentPrice}`,
+        reason: `MARKET order: Entry price ${entryPrice} reached at ${currentPrice}`,
         timestamp: new Date(),
       };
     }
 
-    // Check if expired while pending
+    // Auto-expire stale pending positions (>3 days without entry hit)
+    if (daysActive >= STALE_PENDING_DAYS) {
+      return {
+        id,
+        ticker,
+        previousStatus: status,
+        newStatus: "expired",
+        price: currentPrice,
+        reason: `Pending entry not hit after ${daysActive} days (limit: ${STALE_PENDING_DAYS})`,
+        timestamp: new Date(),
+      };
+    }
+
+    // Check if expired while pending (legacy: maxHoldDays)
     if (daysActive >= maxHoldDays) {
       return {
         id,

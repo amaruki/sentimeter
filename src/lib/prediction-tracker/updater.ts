@@ -77,11 +77,15 @@ export async function updateAllPredictions(): Promise<TrackingResult> {
     const statusUpdate = checkStatusChange(tracked, currentPrice);
 
     if (statusUpdate) {
-      // Update database
-      const pnl =
-        statusUpdate.newStatus !== "pending" && statusUpdate.newStatus !== "entry_hit"
-          ? calculatePnlPct(rec.entryPrice, currentPrice)
-          : undefined;
+      // Only calculate P&L for positions that were actually entered.
+      // pending → expired means entry was never hit, so P&L is meaningless.
+      const wasEntered = statusUpdate.previousStatus === "entry_hit";
+      const isTerminal = statusUpdate.newStatus === "target_hit" ||
+        statusUpdate.newStatus === "sl_hit" ||
+        statusUpdate.newStatus === "expired";
+      const pnl = wasEntered && isTerminal
+        ? calculatePnlPct(rec.entryPrice, currentPrice)
+        : undefined;
 
       updateRecommendationStatus(rec.id, statusUpdate.newStatus, currentPrice, pnl);
 
@@ -148,6 +152,7 @@ function transformToTracked(rec: Recommendation, currentPrice: number): TrackedP
     stopLoss: rec.stopLoss,
     targetPrice: rec.targetPrice,
     maxHoldDays: rec.maxHoldDays,
+    orderType: rec.orderType ?? "LIMIT",
     status: rec.status,
     currentPrice,
     daysActive,

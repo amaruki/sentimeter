@@ -148,6 +148,7 @@ Respond with JSON in this exact format:
   "stopLoss": number,
   "targetPrice": number,
   "maxHoldDays": number,
+  "orderType": "LIMIT" | "MARKET",
   "scores": {
     "sentiment": 0-100,
     "fundamental": 0-100,
@@ -167,7 +168,12 @@ Respond with JSON in this exact format:
       "reason": "Brief reason"
     }
   ]
-}`;
+}
+
+IMPORTANT for orderType:
+- Use "LIMIT" (default) when recommending to place a limit order and act after market closing. This is the preferred approach.
+- Use "MARKET" ONLY when there is an urgent catalyst requiring immediate entry (e.g., breakout confirmed, major news catalyst). In this case the bot will directly enter the position.
+- When in doubt, always default to "LIMIT".`;
 }
 
 /**
@@ -185,6 +191,7 @@ function transformResponse(
     stopLoss: response.stopLoss,
     targetPrice: response.targetPrice,
     maxHoldDays: response.maxHoldDays,
+    orderType: response.orderType ?? "LIMIT",
     sentimentScore: clamp(response.scores.sentiment, 0, 100),
     fundamentalScore: clamp(response.scores.fundamental, 0, 100),
     technicalScore: clamp(response.scores.technical, 0, 100),

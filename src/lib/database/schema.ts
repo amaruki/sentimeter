@@ -81,6 +81,9 @@ export function initDatabase(): void {
       target_price REAL NOT NULL,
       max_hold_days INTEGER NOT NULL,
 
+      -- Order type: LIMIT (default, act after closing) or MARKET (direct entry)
+      order_type TEXT DEFAULT 'LIMIT' CHECK(order_type IN ('LIMIT', 'MARKET')),
+
       -- Scores (0-100)
       sentiment_score REAL NOT NULL,
       fundamental_score REAL NOT NULL,
@@ -172,4 +175,12 @@ export function initDatabase(): void {
       UNIQUE(schedule, execution_date)
     )
   `);
+
+  // Migration: add order_type column if not exists
+  // NOTE: SQLite ALTER TABLE ADD COLUMN does NOT support CHECK constraints
+  try {
+    db.exec(`ALTER TABLE recommendations ADD COLUMN order_type TEXT DEFAULT 'LIMIT'`);
+  } catch {
+    // Column already exists - ignore
+  }
 }

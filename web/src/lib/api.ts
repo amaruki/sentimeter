@@ -9,6 +9,9 @@ import type {
   HistoryParams,
   RefreshResponse,
   SchedulerState,
+  AvoidResponse,
+  MarketOutlookData,
+  TickerAnalysisResponse,
   AppConfig,
   ConfigPatch,
 } from "./types";
@@ -83,4 +86,19 @@ export async function startScheduler(): Promise<SchedulerState> {
 
 export async function stopScheduler(): Promise<SchedulerState> {
   return fetchApi<SchedulerState>("/scheduler/stop", { method: "POST" });
+}
+
+export async function getAvoidList(): Promise<AvoidResponse> {
+  return fetchApi<AvoidResponse>("/avoid");
+}
+
+export async function getMarketOutlook(): Promise<MarketOutlookData | null> {
+  return fetchApi<MarketOutlookData | null>("/market-outlook");
+}
+
+export async function analyzeTicker(ticker: string): Promise<TickerAnalysisResponse> {
+  return fetchApi<TickerAnalysisResponse>("/analyze-ticker", {
+    method: "POST",
+    body: JSON.stringify({ ticker }),
+  });
 }
