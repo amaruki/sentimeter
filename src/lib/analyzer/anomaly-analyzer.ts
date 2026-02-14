@@ -1,6 +1,6 @@
-import { AnomalyDetected } from "../prediction-tracker/types.ts";
-import { StockQuote } from "../market-data/types.ts";
-import { generateContent, type LLMResponse } from "./llm-client.ts";
+import type { AnomalyDetected } from "../prediction-tracker/types.ts";
+import type { StockQuote } from "../market-data/types.ts";
+import { generateContent } from "./llm-client.ts";
 
 interface AnomalyAnalysisResult {
     analysis: string;
