@@ -4,8 +4,6 @@
  * Polls for updates from Telegram bot API to handle commands like /start and /stop.
  */
 
-import { config } from "../lib/config.ts";
-import { getEffectiveConfig } from "../lib/config-overrides.ts";
 import { upsertTelegramUser, deactivateTelegramUser } from "../lib/notifications/telegram-db.ts";
 import { sendTelegramNotification } from "../lib/notifications/telegram.ts"; // Circular dep? No, telegram.ts uses telegram-db.ts, this uses telegram.ts. Wait.
 // telegram.ts uses telegram-db.ts to get users.
@@ -73,7 +71,7 @@ async function pollLoop() {
  * Poll for updates
  */
 async function pollUpdates() {
-  const { botToken } = getEffectiveConfig(config).telegram;
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
   if (!botToken) return;
 
   const url = `https://api.telegram.org/bot${botToken}/getUpdates?offset=${lastUpdateId + 1}&timeout=10`;
@@ -124,7 +122,7 @@ async function handleUpdate(update: TelegramUpdate) {
       isActive: true,
     });
 
-    await sendDirectMessage(config.telegram.botToken!, chatId, "✅ You are now subscribed to Sentimeter alerts!");
+    await sendDirectMessage(process.env.TELEGRAM_BOT_TOKEN!, chatId, "✅ You are now subscribed to Sentimeter alerts!");
   } else if (text === "/stop") {
     console.log(`👤 User unsubscribed: ${user.first_name} (${chatId})`);
     
@@ -133,7 +131,7 @@ async function handleUpdate(update: TelegramUpdate) {
       isActive: false,
     });
 
-    await sendDirectMessage(config.telegram.botToken!, chatId, "🔕 You have unsubscribed from alerts.");
+    await sendDirectMessage(process.env.TELEGRAM_BOT_TOKEN!, chatId, "🔕 You have unsubscribed from alerts.");
   }
 }
 

@@ -4,15 +4,13 @@
  * Sends messages to a Telegram bot.
  */
 
-import { config } from "../config.ts";
-import { getEffectiveConfig } from "../config-overrides.ts";
 import { getActiveTelegramUsers, deactivateTelegramUser } from "./telegram-db.ts";
 
 /**
  * Send a message to all active Telegram users
  */
 export async function sendTelegramNotification(message: string): Promise<void> {
-  const { botToken } = getEffectiveConfig(config).telegram;
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
 
   if (!botToken) {
     // console.warn("⚠️ Telegram bot token not configured.");
