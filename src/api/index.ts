@@ -92,11 +92,7 @@ const server = Bun.serve({
         "/api/scheduler",
         "/api/scheduler/start",
         "/api/scheduler/stop",
-        "/api/refresh", // refresh might be sensitive too
-        "/api/analyze-ticker", // analyzing might be expensive, let's protect it? Plan didn't specify, but config & scheduler are key.
-                               // Wait, plan said "verify ConfigPage". Let's stick to config and scheduler for now as per user request "secure config page".
-                               // But user also said "secure config page...". 
-                               // Let's protect config and scheduler as they are administrative.
+        "/api/refresh",
       ];
 
       const isProtected = protectedPaths.some(p => path.startsWith(p));
