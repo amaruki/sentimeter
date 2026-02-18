@@ -20,8 +20,8 @@
     "typecheck": "bunx tsc --noEmit && bunx tsc --noEmit --project web/tsconfig.json"
   },
   "dependencies": {
-    "@google/genai": "^1.0.0",
     "cheerio": "^1.0.0",
+    "openai": "^6.22.0",
     "yahoo-finance2": "^3.13.0"
   },
   "devDependencies": {

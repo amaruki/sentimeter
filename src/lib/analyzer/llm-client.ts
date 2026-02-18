@@ -1,39 +1,34 @@
 /**
  * LLM Client
  *
- * Uses Google GenAI SDK with Antigravity Manager proxy.
+ * Uses OpenAI SDK with Antigravity Manager proxy.
  * Replaces direct Gemini API calls to avoid quota issues.
  */
 
-import { GoogleGenAI } from "@google/genai";
-import { existsSync, readFileSync, unlinkSync } from "fs";
-import { join } from "path";
+import OpenAI from "openai";
 
-const ANTIGRAVITY_BASE_URL = process.env.ANTIGRAVITY_BASE_URL ?? "http://127.0.0.1:8045";
-const ANTIGRAVITY_API_KEY = process.env.ANTIGRAVITY_API_KEY ?? "";
+const ANTIGRAVITY_BASE_URL = process.env.ANTIGRAVITY_BASE_URL ?? "http://127.0.0.1:8045/v1";
+const ANTIGRAVITY_API_KEY = process.env.ANTIGRAVITY_API_KEY ?? "dummy-key"; // OpenAI SDK requires a key, even if dummy
 const ANTIGRAVITY_MODEL = process.env.ANTIGRAVITY_MODEL ?? "gemini-3-flash";
 const MAX_RETRIES = 3;
 const BASE_DELAY_MS = 2000;
-const OUTPUT_FILE = "llm-output.json";
 
-let genai: GoogleGenAI | null = null;
+let openai: OpenAI | null = null;
 
 /**
- * Get or create the GenAI client
+ * Get or create the OpenAI client
  */
-function getClient(): GoogleGenAI {
-  if (!genai) {
-    if (!ANTIGRAVITY_API_KEY) {
-      console.warn("WARNING: ANTIGRAVITY_API_KEY not set in environment");
+function getClient(): OpenAI {
+  if (!openai) {
+    if (!process.env.ANTIGRAVITY_API_KEY) {
+      console.warn("WARNING: ANTIGRAVITY_API_KEY not set in environment, using dummy key");
     }
-    genai = new GoogleGenAI({
+    openai = new OpenAI({
       apiKey: ANTIGRAVITY_API_KEY,
-      httpOptions: {
-        baseUrl: ANTIGRAVITY_BASE_URL,
-      },
+      baseURL: ANTIGRAVITY_BASE_URL,
     });
   }
-  return genai;
+  return openai;
 }
 
 export interface LLMResponse<T> {
@@ -60,14 +55,18 @@ function isRateLimitError(error: unknown): boolean {
       message.includes("rate") ||
       message.includes("quota") ||
       message.includes("429") ||
-      message.includes("resource_exhausted")
+      message.includes("resource_exhausted") 
     );
+  }
+  // OpenAI specific error object structure (if not standard Error)
+  if (typeof error === 'object' && error !== null && 'status' in error) {
+      return (error as any).status === 429;
   }
   return false;
 }
 
 /**
- * Generate content using Antigravity Manager (Gemini protocol)
+ * Generate content using Antigravity Manager (OpenAI protocol)
  */
 export async function generateContent<T>(
   prompt: string,
@@ -77,22 +76,27 @@ export async function generateContent<T>(
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
-      const response = await getClient().models.generateContent({
+      const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [];
+      
+      if (systemInstruction) {
+        messages.push({ role: "system", content: systemInstruction });
+      }
+      
+      messages.push({ role: "user", content: prompt });
+
+      const response = await getClient().chat.completions.create({
         model: ANTIGRAVITY_MODEL,
-        contents: prompt,
-        config: {
-          systemInstruction: systemInstruction,
-          temperature: 0.3,
-          topP: 0.8,
-          maxOutputTokens: 4096,
-          responseMimeType: "application/json", // Force JSON output
-        },
+        messages: messages,
+        temperature: 0.3,
+        top_p: 0.8,
+        max_tokens: 4096,
+        response_format: { type: "json_object" },
       });
 
-      const text = response.text ?? "";
-      const tokensUsed = response.usageMetadata?.totalTokenCount ?? 0;
+      const text = response.choices[0]?.message?.content ?? "";
+      const tokensUsed = response.usage?.total_tokens ?? 0;
 
-      // Parse JSON from response (should be clean JSON now)
+      // Parse JSON from response
       try {
         const parsed = JSON.parse(text) as T;
         return {
@@ -102,7 +106,7 @@ export async function generateContent<T>(
           tokensUsed,
         };
       } catch {
-        // Fallback to regex parsing
+        // Fallback to regex parsing if strict JSON parsing fails
         const parsed = parseJsonResponse<T>(text);
         if (!parsed) {
           return {
@@ -179,7 +183,11 @@ function parseJsonResponse<T>(text: string): T | null {
  * Check if Antigravity API is configured
  */
 export function isLLMConfigured(): boolean {
-  return ANTIGRAVITY_API_KEY.length > 0;
+   // OpenAI SDK always requires an API key, but we default to dummy if not set.
+   // So effectively it is always "configured" on the client side, 
+   // but might fail if the server requires a valid key.
+   // For now checking if the env var is present or we used the default.
+  return process.env.ANTIGRAVITY_API_KEY ? process.env.ANTIGRAVITY_API_KEY.length > 0 : false;
 }
 
 /**
