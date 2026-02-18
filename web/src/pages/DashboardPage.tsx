@@ -11,6 +11,7 @@ import {
   LogPanel,
   SummaryTable, AvoidSection, MarketOutlookPanel,
   useToast,
+  TelegramCallToAction,
 } from "@/components";
 import { RecommendationCard } from "@/components/RecommendationCard";
 import { ActivePositionCard } from "@/components/ActivePositionCard";
@@ -205,6 +206,8 @@ export function DashboardPage() {
           </div>
         </section>
       )}
+
+      <TelegramCallToAction />
 
       <section>
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
