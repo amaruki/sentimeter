@@ -74,7 +74,7 @@ const server = Bun.serve({
 
     try {
       // Health check
-      if (path === "/health" || path === "/") {
+      if (path === "/health") {
         return jsonResponse(
           {
             status: "ok",
@@ -132,6 +132,30 @@ const server = Bun.serve({
 
       if (path === "/api/analyze-ticker" && method === "POST") {
         return await handleAnalyzeTicker(request);
+      }
+
+      
+      // Try serving static files from web/dist
+      const webDist = "web/dist";
+      let filePath = path;
+      if (path === "/") filePath = "/index.html";
+      
+      // Prevent directory traversal
+      if (path.includes("..")) {
+         return jsonResponse(errorResponse("Invalid path"), 400, origin);
+      }
+
+      const file = Bun.file(`${webDist}${filePath}`);
+      if (await file.exists()) {
+        return new Response(file);
+      }
+
+      // SPA Fallback for HTML requests (client-side routing)
+      if (request.headers.get("Accept")?.includes("text/html") && method === "GET") {
+        const indexHtml = Bun.file(`${webDist}/index.html`);
+        if (await indexHtml.exists()) {
+           return new Response(indexHtml);
+        }
       }
 
       // 404 Not Found

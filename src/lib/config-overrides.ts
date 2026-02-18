@@ -28,8 +28,10 @@ const DEFAULT_SCHEDULER = {
   eveningMinute: 30,
 };
 
-const DATA_DIR = "data";
-const CONFIG_PATH = `${DATA_DIR}/config-overrides.json`;
+import { join } from "path";
+
+const DATA_DIR = join(process.cwd(), "data");
+const CONFIG_PATH = join(DATA_DIR, "config-overrides.json");
 
 let overrides: ConfigOverrides = {};
 
