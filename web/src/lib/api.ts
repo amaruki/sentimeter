@@ -12,6 +12,8 @@ import type {
   AvoidResponse,
   MarketOutlookData,
   TickerAnalysisResponse,
+  AppConfig,
+  ConfigPatch,
 } from "./types";
 
 const API_BASE = "/api";
@@ -61,6 +63,17 @@ export async function getHistory(
 
 export async function triggerRefresh(): Promise<RefreshResponse> {
   return fetchApi<RefreshResponse>("/refresh", { method: "POST" });
+}
+
+export async function getConfig(): Promise<AppConfig> {
+  return fetchApi<AppConfig>("/config");
+}
+
+export async function patchConfig(patch: ConfigPatch): Promise<AppConfig> {
+  return fetchApi<AppConfig>("/config", {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
 }
 
 export async function getScheduler(): Promise<SchedulerState> {

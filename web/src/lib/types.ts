@@ -231,3 +231,42 @@ export interface TickerAnalysisResponse {
     technicalSummary: string;
   } | null;
 }
+
+export interface AppConfig {
+  scheduler: {
+    morningHour: number;
+    morningMinute: number;
+    eveningHour: number;
+    eveningMinute: number;
+    morningTime: string;
+    eveningTime: string;
+    nextRun: string | null;
+  };
+  telegram: {
+    configured: boolean;
+    botToken: string;
+    chatId: string;
+  };
+  anomaly: {
+    priceChangePct: number;
+    volumeMultiplier: number;
+  };
+  llm: {
+    baseUrl: string;
+    model: string;
+    apiKey: string;
+    configured: boolean;
+  };
+}
+
+export type ConfigPatch = Partial<{
+  scheduler: {
+    morningHour: number;
+    morningMinute: number;
+    eveningHour: number;
+    eveningMinute: number;
+  };
+  telegram: { botToken: string; chatId: string };
+  anomaly: { priceChangePct: number; volumeMultiplier: number };
+  llm: { baseUrl: string; model: string; apiKey: string };
+}>;

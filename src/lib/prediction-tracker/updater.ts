@@ -18,7 +18,7 @@ import {
   getRecommendationsByDate,
 } from "../database/queries.ts";
 import type { Recommendation } from "../database/types.ts";
-import { fetchCurrentQuote } from "../market-data/index.ts";
+import { fetchMultipleQuotes, fetchCurrentQuote } from "../market-data/index.ts";
 
 /**
  * Update all active predictions with current prices
@@ -29,6 +29,7 @@ export async function updateAllPredictions(): Promise<TrackingResult> {
     updated: 0,
     statusUpdates: [],
     errors: [],
+    currentPrices: {},
   };
 
   // Get all active recommendations
@@ -39,21 +40,30 @@ export async function updateAllPredictions(): Promise<TrackingResult> {
     return result;
   }
 
-  // Get unique tickers
+  // Fetch current prices in parallel
   const tickers = [...new Set(activeRecs.map((r) => r.ticker))];
+  let priceMap = new Map<string, number>();
 
-  // Fetch current prices
-  const priceMap = new Map<string, number>();
-  for (const ticker of tickers) {
-    try {
-      const quoteResult = await fetchCurrentQuote(ticker);
+  try {
+    const quotesMap = await fetchMultipleQuotes(tickers);
+    
+    // Convert to simple price map
+    // Convert to simple price map
+    for (const [ticker, quoteResult] of quotesMap.entries()) {
       if (quoteResult.success && quoteResult.data) {
-        priceMap.set(ticker, quoteResult.data.price);
+        // Handle optional price (yahoo-finance2 types can be tricky)
+        const price = quoteResult.data.regularMarketPrice;
+        if (price !== undefined) {
+             priceMap.set(ticker, price);
+             result.currentPrices[ticker] = price;
+        }
+      } else if (quoteResult.error) {
+           result.errors.push(`Failed to fetch price for ${ticker}: ${quoteResult.error}`);
       }
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : String(error);
-      result.errors.push(`Failed to fetch price for ${ticker}: ${msg}`);
     }
+  } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      result.errors.push(`Failed to batch fetch prices: ${msg}`);
   }
 
   // Check each prediction

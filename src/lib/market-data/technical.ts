@@ -88,6 +88,7 @@ export async function fetchCurrentQuote(
     volume: quote.regularMarketVolume ?? 0,
     change: quote.regularMarketChange ?? 0,
     changePercent: quote.regularMarketChangePercent ?? 0,
+    averageVolume: quote.averageDailyVolume10Day ?? 0,
     marketState: mapMarketState(quote.marketState),
     lastUpdated: new Date(),
   };

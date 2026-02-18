@@ -17,6 +17,7 @@ export interface StockQuote {
   volume: number;
   change: number;
   changePercent: number;
+  averageVolume?: number;
   marketState: "PRE" | "REGULAR" | "POST" | "CLOSED";
   lastUpdated: Date;
 }

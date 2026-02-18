@@ -12,6 +12,7 @@ import type {
   AvoidResponse,
   MarketOutlookData,
   TickerAnalysisResponse,
+  AppConfig,
 } from "./types";
 import {
   getRecommendations,
@@ -23,6 +24,7 @@ import {
   getAvoidList,
   getMarketOutlook,
   analyzeTicker,
+  getConfig,
 } from "./api";
 
 interface UseQueryResult<T> {
@@ -276,4 +278,96 @@ export function useTickerAnalysis(): {
   }, []);
 
   return { analyze, data, loading, error };
+}
+
+export function useConfig(): {
+  data: AppConfig | null;
+  loading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+} {
+  const [data, setData] = useState<AppConfig | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await getConfig();
+      setData(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load config");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
+
+  return { data, loading, error, refetch: fetchData };
+}
+
+export function useWebSocket(
+  url: string,
+  onMessage?: (data: any) => void
+): { isConnected: boolean; lastMessage: any } {
+  const [isConnected, setIsConnected] = useState(false);
+  const [lastMessage, setLastMessage] = useState<any>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const onMessageRef = useRef(onMessage);
+
+  useEffect(() => {
+    onMessageRef.current = onMessage;
+  }, [onMessage]);
+
+  useEffect(() => {
+    let retryTimeout: ReturnType<typeof setTimeout>;
+
+    function connect() {
+      // Construct full URL
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const host = window.location.host;
+      const fullUrl = url.startsWith("/") ? `${protocol}//${host}${url}` : url;
+
+      const ws = new WebSocket(fullUrl);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        setIsConnected(true);
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          setLastMessage(data);
+          if (onMessageRef.current) {
+            onMessageRef.current(data);
+          }
+        } catch (e) {
+          console.error("Failed to parse WebSocket message", e);
+        }
+      };
+
+      ws.onclose = () => {
+        setIsConnected(false);
+        retryTimeout = setTimeout(connect, 3000);
+      };
+
+      ws.onerror = () => {
+        ws.close();
+      };
+    }
+
+    connect();
+
+    return () => {
+      clearTimeout(retryTimeout);
+      wsRef.current?.close();
+    };
+  }, [url]);
+
+  return { isConnected, lastMessage };
 }

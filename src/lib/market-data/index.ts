@@ -10,7 +10,7 @@
  */
 
 export * from "./types.ts";
-export { fetchQuote, fetchQuoteSummary, fetchHistorical } from "./yahoo-client.ts";
+export { fetchQuote, fetchQuoteSummary, fetchHistorical, fetchMultipleQuotes } from "./yahoo-client.ts";
 export { fetchFundamentals, fetchMultipleFundamentals } from "./fundamental.ts";
 export {
   fetchPriceHistory,

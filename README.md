@@ -319,9 +319,9 @@ Create a `.env` file in the project root:
 
 ```env
 # Antigravity Manager (OpenAI-compatible proxy)
-ANTIGRAVITY_BASE_URL=http://127.0.0.1:8045/v1
+ANTIGRAVITY_BASE_URL=http://127.0.0.1:8045
 ANTIGRAVITY_API_KEY=your_antigravity_api_key_here
-ANTIGRAVITY_MODEL=gemini-3.0-flash
+ANTIGRAVITY_MODEL=gemini-3-flash
 
 # Optional: API server port (default: 3001)
 PORT=3001
@@ -383,7 +383,7 @@ bun run src/jobs/scheduler.ts
 The scheduler runs the analysis automatically at:
 
 - Morning: 7:30 WIB (before market open)
-- Evening: 16:30 WIB (after market close)
+- Evening: 15:30 WIB (after market close)
 
 ## API Reference
 

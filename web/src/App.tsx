@@ -4,7 +4,7 @@
 
 import { Routes, Route } from "react-router-dom";
 import { Navigation } from "@/components";
-import { DashboardPage, HistoryPage, TickerAnalysisPage } from "@/pages";
+import { DashboardPage, HistoryPage, TickerAnalysisPage, ConfigPage } from "@/pages";
 
 export default function App() {
   return (
@@ -15,6 +15,7 @@ export default function App() {
           <Route path="/" element={<DashboardPage />} />
           <Route path="/history" element={<HistoryPage />} />
           <Route path="/analyze" element={<TickerAnalysisPage />} />
+          <Route path="/config" element={<ConfigPage />} />
         </Routes>
       </main>
     </div>

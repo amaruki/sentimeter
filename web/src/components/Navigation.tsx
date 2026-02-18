@@ -61,6 +61,18 @@ export function Navigation() {
               >
                 Analyze
               </NavLink>
+              <NavLink
+                to="/config"
+                className={({ isActive }) =>
+                  `px-3 py-2 rounded-md text-sm font-medium ${
+                    isActive
+                      ? "bg-primary-100 text-primary-700"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  }`
+                }
+              >
+                Config
+              </NavLink>
             </div>
           </div>
           <div className="flex items-center">

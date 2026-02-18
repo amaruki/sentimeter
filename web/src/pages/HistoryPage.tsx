@@ -2,7 +2,7 @@
  * History Page
  */
 
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Card, LoadingState, ErrorState, EmptyState, Badge, StatsCard } from "@/components";
 import {
   useHistory,
@@ -23,25 +23,66 @@ const STATUS_OPTIONS = [
   { value: "expired", label: "Expired" },
 ];
 
+const TICKER_DEBOUNCE_MS = 400;
+
 export function HistoryPage() {
   const [params, setParams] = useState<HistoryParams>({
     page: 1,
     pageSize: 20,
   });
 
+  const [tickerInput, setTickerInput] = useState("");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const { data, loading, error, refetch } = useHistory(params);
 
-  const handleFilterChange = (key: keyof HistoryParams, value: string) => {
+  // Sync ticker input when params.ticker changes (e.g. after clear)
+  useEffect(() => {
+    setTickerInput(params.ticker ?? "");
+  }, [params.ticker]);
+
+  const handleFilterChange = useCallback((key: keyof HistoryParams, value: string) => {
     setParams((prev) => ({
       ...prev,
-      [key]: value || undefined,
+      [key]: value.trim() || undefined,
       page: 1,
     }));
-  };
+  }, []);
+
+  const handleTickerChange = useCallback(
+    (value: string) => {
+      setTickerInput(value);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        debounceRef.current = null;
+        setParams((prev) => ({
+          ...prev,
+          ticker: value.trim() || undefined,
+          page: 1,
+        }));
+      }, TICKER_DEBOUNCE_MS);
+    },
+    []
+  );
+
+  const handleClearFilters = useCallback(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+    setTickerInput("");
+    setParams({ page: 1, pageSize: 20 });
+  }, []);
 
   const handlePageChange = (newPage: number) => {
     setParams((prev) => ({ ...prev, page: newPage }));
   };
+
+  const hasActiveFilters =
+    (params.ticker ?? "") !== "" ||
+    (params.status ?? "") !== "" ||
+    (params.startDate ?? "") !== "" ||
+    (params.endDate ?? "") !== "";
 
   if (loading) return <LoadingState message="Loading history..." />;
   if (error) return <ErrorState message={error} onRetry={refetch} />;
@@ -67,18 +108,20 @@ export function HistoryPage() {
       <StatsCard stats={stats} />
 
       <Card>
-        <div className="flex flex-wrap gap-4 mb-6">
+        <div className="flex flex-wrap items-center gap-4 mb-6">
           <input
             type="text"
-            placeholder="Filter by ticker..."
+            placeholder="Search by ticker..."
             className="input w-40"
-            value={params.ticker ?? ""}
-            onChange={(e) => handleFilterChange("ticker", e.target.value)}
+            value={tickerInput}
+            onChange={(e) => handleTickerChange(e.target.value)}
+            aria-label="Filter by ticker"
           />
           <select
             className="input w-40"
             value={params.status ?? ""}
             onChange={(e) => handleFilterChange("status", e.target.value)}
+            aria-label="Filter by status"
           >
             {STATUS_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -91,13 +134,24 @@ export function HistoryPage() {
             className="input w-40"
             value={params.startDate ?? ""}
             onChange={(e) => handleFilterChange("startDate", e.target.value)}
+            aria-label="Start date"
           />
           <input
             type="date"
             className="input w-40"
             value={params.endDate ?? ""}
             onChange={(e) => handleFilterChange("endDate", e.target.value)}
+            aria-label="End date"
           />
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={handleClearFilters}
+              className="btn-secondary text-sm"
+            >
+              Clear filters
+            </button>
+          )}
         </div>
 
         {data.items.length === 0 ? (
