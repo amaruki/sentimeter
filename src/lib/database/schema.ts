@@ -176,11 +176,33 @@ export function initDatabase(): void {
     )
   `);
 
-  // Migration: add order_type column if not exists
-  // NOTE: SQLite ALTER TABLE ADD COLUMN does NOT support CHECK constraints
   try {
     db.exec(`ALTER TABLE recommendations ADD COLUMN order_type TEXT DEFAULT 'LIMIT'`);
   } catch {
     // Column already exists - ignore
   }
+
+  // Telegram Users
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS telegram_users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      chat_id INTEGER UNIQUE NOT NULL,
+      username TEXT,
+      first_name TEXT,
+      last_name TEXT,
+      is_active BOOLEAN DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_telegram_users_chat_id
+    ON telegram_users(chat_id)
+  `);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_telegram_users_is_active
+    ON telegram_users(is_active)
+  `);
 }

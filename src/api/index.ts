@@ -22,6 +22,7 @@ import { handleGetConfig, handlePatchConfig } from "./routes/config.ts";
 import { loadOverrides } from "../lib/config-overrides.ts";
 import { initDatabase } from "../lib/database/schema.ts";
 import { startMonitoring, setBroadcastFn } from "../services/monitor.ts";
+import { startTelegramPolling } from "../services/telegram-poller.ts";
 import { websocketHandler, broadcast } from "./websocket.ts";
 import type { WebSocketData } from "./websocket.ts";
 import type { Server } from "bun";
@@ -39,6 +40,9 @@ loadOverrides();
 console.log("⏱️  Initializing price monitor...");
 setBroadcastFn(broadcast);
 startMonitoring(15000);
+
+// Initialize Telegram polling
+startTelegramPolling();
 
 console.log(`🚀 Starting Sentimeter API server on port ${PORT}...`);
 
