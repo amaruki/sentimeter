@@ -168,7 +168,7 @@ export function ConfigPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Config</h1>
           <p className="text-gray-500">
-            Schedule times, and anomaly detection.
+            Schedule times, Telegram notifications, and anomaly detection.
           </p>
         </div>
         <button
@@ -235,6 +235,38 @@ export function ConfigPage() {
             )}
           </Card>
         )}
+      </ConfigSection>
+
+      <ConfigSection
+        title="Telegram notifications"
+        subtitle="Subscribe to receive daily recommendations and anomaly alerts."
+      >
+        <Card>
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
+              <svg className="w-5 h-5 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.19 13.4l-2.965-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.963.159z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-gray-800 mb-1">
+                Telegram Bot:{" "}
+                <a
+                  href="https://t.me/reportntfbot"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-700 font-semibold"
+                >
+                  @reportntfbot
+                </a>
+              </p>
+              <p className="text-sm text-gray-500">
+                Open the bot and send <code className="bg-gray-100 px-1 py-0.5 rounded text-xs font-mono">/start</code> to subscribe to alerts.
+                Send <code className="bg-gray-100 px-1 py-0.5 rounded text-xs font-mono">/stop</code> to unsubscribe.
+              </p>
+            </div>
+          </div>
+        </Card>
       </ConfigSection>
 
       <ConfigSection title="Anomaly detection" subtitle="Thresholds for alerts.">
