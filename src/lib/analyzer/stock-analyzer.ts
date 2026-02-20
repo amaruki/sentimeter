@@ -5,6 +5,7 @@
  */
 
 import { generateContent } from "./llm-client.ts";
+import { stockAnalysisSchema } from "./schemas.ts";
 import type {
   StockAnalysisInput,
   StockAnalysisResult,
@@ -41,7 +42,8 @@ export async function analyzeStock(
 
   const response = await generateContent<StockAnalysisResponse>(
     prompt,
-    SYSTEM_INSTRUCTION
+    SYSTEM_INSTRUCTION,
+    stockAnalysisSchema
   );
 
   if (!response.success || !response.data) {
