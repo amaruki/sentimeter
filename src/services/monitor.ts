@@ -15,6 +15,7 @@ import type {
 import { detectAnomalies } from "../lib/analyzer/anomaly-detector.ts";
 import { fetchCurrentQuote } from "../lib/market-data/index.ts";
 import { analyzeAnomaly } from "../lib/analyzer/anomaly-analyzer.ts";
+import { isMarketOpen } from "../lib/market-hours.ts";
 
 let intervalId: ReturnType<typeof setInterval> | null = null;
 let clockIntervalId: ReturnType<typeof setInterval> | null = null;
@@ -88,6 +89,11 @@ export function stopMonitoring() {
 
 async function runCheck() {
   try {
+    // Check if market is open
+    if (!isMarketOpen()) {
+      return;
+    }
+
     const result = await updateAllPredictions();
 
     // 1. Broadcast prices
