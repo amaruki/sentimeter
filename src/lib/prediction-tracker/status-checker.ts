@@ -25,19 +25,21 @@ export function checkStatusChange(
 
   // Pending - check if entry price is hit
   if (status === "pending") {
-    // For LIMIT orders: do NOT auto-transition to entry_hit.
-    // Entry should only happen after market close (manual or scheduled).
-    // For MARKET orders: auto-transition when price is hit.
-    const orderType = prediction.orderType ?? "LIMIT";
-
-    if (orderType === "MARKET" && isPriceHit(currentPrice, entryPrice)) {
+    // For ANY order type (LIMIT or MARKET): auto-transition when price touches entry
+    // A MARKET order buys right at the open price, but we just check if it touches the entry.
+    // We treat both similarly for real-time tracking: if the price hits or drops below the entryPrice, we enter.
+    const tolerance = 0.005; // 0.5% tolerance
+    const upperBound = entryPrice * (1 + tolerance);
+    
+    // We consider the entry hit if current price is <= upperBound of entry price
+    if (currentPrice <= upperBound) {
       return {
         id,
         ticker,
         previousStatus: status,
         newStatus: "entry_hit",
         price: currentPrice,
-        reason: `MARKET order: Entry price ${entryPrice} reached at ${currentPrice}`,
+        reason: `Entry price ${entryPrice} reached at ${currentPrice}`,
         timestamp: new Date(),
       };
     }

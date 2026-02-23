@@ -104,9 +104,13 @@ export function SummaryTable({ recommendations, activePositions, date }: Summary
       targetDate.setHours(0, 0, 0, 0);
       const diffTime = targetDate.getTime() - recDate.getTime();
       const diffDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+      const tolerance = 0.005;
+      const upperBound = rec.entryPrice * (1 + tolerance);
 
       const pnl =
-        rec.currentPrice !== null && rec.currentPrice !== undefined
+        rec.currentPrice !== null &&
+          rec.currentPrice !== undefined &&
+          rec.currentPrice <= upperBound
           ? ((rec.currentPrice - rec.entryPrice) / rec.entryPrice) * 100
           : null;
 
