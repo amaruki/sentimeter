@@ -249,6 +249,18 @@ export function DashboardPage() {
       {avoidData && avoidData.items.length > 0 && (
         <AvoidSection items={avoidData.items} />
       )}
+
+      <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-md shadow-sm">
+        <h3 className="text-amber-800 font-bold mb-1 flex items-center gap-2">
+          Disclaimer: Market Data & Not Financial Advice
+        </h3>
+        <p className="text-amber-700 text-sm">
+          Please note that "real-time" market prices provided via Yahoo Finance may be delayed by up to 10 minutes.
+          The AI recommendations and analyses presented by Sentimeter are for informational and educational purposes only, and are not guaranteed to be perfectly accurate.
+          <strong> Always Do Your Own Research (DYOR)</strong> before making any investment decisions.
+          We are not responsible for any financial losses or damages resulting from the use of this system.
+        </p>
+      </div>
     </div>
   );
 }
