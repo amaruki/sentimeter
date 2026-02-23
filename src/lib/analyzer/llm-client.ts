@@ -101,6 +101,7 @@ export async function generateContent<T>(
         // Fallback to regex parsing if strict JSON parsing fails
         parsedJson = parseJsonResponse(text);
         if (!parsedJson) {
+           console.error("RAW LLM OUTPUT:", text);
            throw new Error("Failed to parse JSON from response text");
         }
       }
