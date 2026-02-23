@@ -21,6 +21,7 @@ import {
   useLogStream,
   useWebSocket,
   useAvoidList, useMarketOutlook, formatPercent,
+  useHistory,
   type ActivePositionItem,
   type RecommendationItem,
 } from "@/lib";
@@ -117,22 +118,26 @@ export function DashboardPage() {
   const { isConnected } = useWebSocket("/ws", handleWebSocketMessage);
   const { data: avoidData } = useAvoidList();
   const { data: outlookData } = useMarketOutlook();
+  const { data: historyData } = useHistory({ page: 1, pageSize: 1 }); // Fetch summary stats
 
   if (loading) return <LoadingState message="Loading recommendations..." />;
   if (error) return <ErrorState message={error} onRetry={refetch} />;
   if (!data) return <EmptyState message="No data available" />;
 
+  const winRate = historyData?.stats?.winRate ?? data.summary.winRate;
+  const avgReturn = historyData?.stats?.avgReturn ?? data.summary.avgReturn;
+
   const stats = [
     { label: "Active Positions", value: activePositions.length },
-    { label: "Pending Entry", value: data.summary.totalPending },
+    { label: "Pending Entry", value: data.summary.pending },
     {
       label: "Win Rate",
-      value: data.summary.winRate ? `${data.summary.winRate.toFixed(1)}%` : "-",
+      value: winRate !== null ? `${winRate.toFixed(1)}%` : "-",
     },
     {
       label: "Avg Return",
-      value: data.summary.avgReturn
-        ? formatPercent(data.summary.avgReturn)
+      value: avgReturn !== null
+        ? formatPercent(avgReturn)
         : "-",
     },
   ];

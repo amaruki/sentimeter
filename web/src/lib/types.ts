@@ -53,8 +53,9 @@ export interface ActivePositionItem {
 
 export interface PredictionSummary {
   totalActive: number;
-  totalPending: number;
-  totalClosed: number;
+  pending: number;
+  entryHit: number;
+  closedToday: number;
   winRate: number | null;
   avgReturn: number | null;
 }

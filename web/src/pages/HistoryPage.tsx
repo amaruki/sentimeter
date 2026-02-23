@@ -90,8 +90,8 @@ export function HistoryPage() {
 
   const stats = [
     { label: "Total Recommendations", value: data.stats.totalRecommendations },
-    { label: "Win Rate", value: data.stats.winRate ? `${data.stats.winRate.toFixed(1)}%` : "-" },
-    { label: "Avg Return", value: data.stats.avgReturn ? formatPercent(data.stats.avgReturn) : "-" },
+    { label: "Win Rate", value: data.stats.winRate !== null ? `${data.stats.winRate.toFixed(1)}%` : "-" },
+    { label: "Avg Return", value: data.stats.avgReturn !== null ? formatPercent(data.stats.avgReturn) : "-" },
     {
       label: "Best Pick",
       value: data.stats.bestPick ? `${data.stats.bestPick.ticker} (${formatPercent(data.stats.bestPick.returnPct)})` : "-",
