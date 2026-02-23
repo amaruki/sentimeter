@@ -21,7 +21,7 @@ export function ActivePositionCard({ position }: ActivePositionCardProps) {
 
   return (
     <Card className="hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between mb-3">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-0 mb-3">
         <div>
           <div className="flex items-center gap-2">
             <h3 className="text-lg font-bold text-gray-900">{position.ticker}</h3>
@@ -31,7 +31,7 @@ export function ActivePositionCard({ position }: ActivePositionCardProps) {
           </div>
           <p className="text-sm text-gray-500">{position.companyName}</p>
         </div>
-        <div className="text-right">
+        <div className="text-left sm:text-right">
           <p className={`text-xl font-bold ${pnlColor}`}>
             {formatPercent(position.unrealizedPnlPct)}
           </p>

@@ -31,7 +31,7 @@ export function TickerAnalysisPage() {
       </div>
 
       <Card>
-        <form onSubmit={handleSubmit} className="flex gap-3">
+        <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
           <input
             type="text"
             value={tickerInput}
@@ -67,9 +67,8 @@ export function TickerAnalysisPage() {
                   {formatCurrency(data.currentPrice)}
                 </p>
                 <p
-                  className={`text-sm font-medium ${
-                    data.priceChangePct >= 0 ? "text-success-600" : "text-danger-600"
-                  }`}
+                  className={`text-sm font-medium ${data.priceChangePct >= 0 ? "text-success-600" : "text-danger-600"
+                    }`}
                 >
                   {formatPercent(data.priceChangePct)}
                 </p>
@@ -164,13 +163,12 @@ export function TickerAnalysisPage() {
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">AI Analysis</h3>
                 <span
-                  className={`px-3 py-1 rounded-full text-sm font-bold ${
-                    data.analysis.action === "BUY"
+                  className={`px-3 py-1 rounded-full text-sm font-bold ${data.analysis.action === "BUY"
                       ? "bg-success-50 text-success-700"
                       : data.analysis.action === "AVOID"
                         ? "bg-danger-50 text-danger-700"
                         : "bg-gray-100 text-gray-700"
-                  }`}
+                    }`}
                 >
                   {data.analysis.action}
                 </span>

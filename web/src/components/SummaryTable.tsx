@@ -167,34 +167,34 @@ export function SummaryTable({ recommendations, activePositions, date }: Summary
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm whitespace-nowrap">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th className="px-3 py-2 text-left font-semibold text-gray-700">Ticker</th>
-              <th className="px-3 py-2 text-center font-semibold text-gray-700">Signal</th>
-              <th className="px-3 py-2 text-right font-semibold text-gray-700">Entry</th>
-              <th className="px-3 py-2 text-right font-semibold text-gray-700">Current</th>
-              <th className="px-3 py-2 text-right font-semibold text-gray-700">Target</th>
-              <th className="px-3 py-2 text-right font-semibold text-gray-700">SL</th>
-              <th className="px-3 py-2 text-right font-semibold text-gray-700">P&L</th>
-              <th className="px-3 py-2 text-center font-semibold text-gray-700">Days</th>
+              <th className="px-6 py-3 text-left font-semibold text-gray-700">Ticker</th>
+              <th className="px-6 py-3 text-center font-semibold text-gray-700">Signal</th>
+              <th className="px-6 py-3 text-right font-semibold text-gray-700">Entry</th>
+              <th className="px-6 py-3 text-right font-semibold text-gray-700">Current</th>
+              <th className="px-6 py-3 text-right font-semibold text-gray-700">Target</th>
+              <th className="px-6 py-3 text-right font-semibold text-gray-700">SL</th>
+              <th className="px-6 py-3 text-right font-semibold text-gray-700">P&L</th>
+              <th className="px-6 py-3 text-center font-semibold text-gray-700">Days</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {pagedRows.map((row, idx) => (
               <tr key={`${row.ticker}-${idx}`} className="hover:bg-gray-50">
-                <td className="px-3 py-2 font-bold text-gray-900">{row.ticker}</td>
-                <td className="px-3 py-2 text-center">
+                <td className="px-6 py-3 font-bold text-gray-900">{row.ticker}</td>
+                <td className="px-6 py-3 text-center">
                   <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${SIGNAL_STYLES[row.signal]}`}>
                     {SIGNAL_LABELS[row.signal]}
                   </span>
                 </td>
-                <td className="px-3 py-2 text-right text-gray-700">{formatPrice(row.entry)}</td>
-                <td className="px-3 py-2 text-right text-gray-900 font-medium">{formatPrice(row.current)}</td>
-                <td className="px-3 py-2 text-right text-green-700">{formatPrice(row.target)}</td>
-                <td className="px-3 py-2 text-right text-red-700">{formatPrice(row.stopLoss)}</td>
-                <td className={`px-3 py-2 text-right ${getPnlColor(row.pnl)}`}>{formatPnl(row.pnl)}</td>
-                <td className="px-3 py-2 text-center text-gray-600">{row.days}</td>
+                <td className="px-6 py-3 text-right text-gray-700">{formatPrice(row.entry)}</td>
+                <td className="px-6 py-3 text-right text-gray-900 font-medium">{formatPrice(row.current)}</td>
+                <td className="px-6 py-3 text-right text-green-700">{formatPrice(row.target)}</td>
+                <td className="px-6 py-3 text-right text-red-700">{formatPrice(row.stopLoss)}</td>
+                <td className={`px-6 py-3 text-right ${getPnlColor(row.pnl)}`}>{formatPnl(row.pnl)}</td>
+                <td className="px-6 py-3 text-center text-gray-600">{row.days}</td>
               </tr>
             ))}
           </tbody>

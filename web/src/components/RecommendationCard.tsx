@@ -15,7 +15,7 @@ interface RecommendationCardProps {
 export function RecommendationCard({ recommendation: rec }: RecommendationCardProps) {
   return (
     <Card className="hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-0 mb-4">
         <div>
           <div className="flex items-center gap-2">
             <h3 className="text-xl font-bold text-gray-900">{rec.ticker}</h3>
@@ -30,7 +30,7 @@ export function RecommendationCard({ recommendation: rec }: RecommendationCardPr
         <ScoreGauge score={rec.overallScore} label="Score" size="md" />
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
         <div className="text-center p-3 bg-gray-50 rounded-lg">
           <p className="text-xs text-gray-500">Entry</p>
           <p className="font-semibold text-gray-900">{formatCurrency(rec.entryPrice)}</p>
