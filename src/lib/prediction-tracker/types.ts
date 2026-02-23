@@ -3,6 +3,7 @@
  *
  * Type definitions for tracking prediction status.
  */
+import type { StockQuote } from "../market-data/index.ts";
 
 export type PredictionStatus =
   | "pending" // Waiting for entry price to be hit
@@ -63,6 +64,7 @@ export interface TrackingResult {
   statusUpdates: StatusUpdate[];
   errors: string[];
   currentPrices: Record<string, number>;
+  currentQuotes: Record<string, StockQuote>;
   anomalies?: AnomalyDetected[];
 }
 

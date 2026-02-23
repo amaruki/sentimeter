@@ -1,11 +1,5 @@
-/**
- * LLM Client
- *
- * Uses OpenAI SDK with Antigravity Manager proxy.
- * Replaces direct Gemini API calls to avoid quota issues.
- */
-
 import OpenAI from "openai";
+import { z } from "zod";
 
 const ANTIGRAVITY_BASE_URL = process.env.ANTIGRAVITY_BASE_URL ?? "http://127.0.0.1:8045/v1";
 const ANTIGRAVITY_API_KEY = process.env.ANTIGRAVITY_API_KEY ?? "dummy-key"; // OpenAI SDK requires a key, even if dummy
@@ -67,12 +61,15 @@ function isRateLimitError(error: unknown): boolean {
 
 /**
  * Generate content using Antigravity Manager (OpenAI protocol)
+ * Supports Zod validation and auto-retry on validation failure
  */
 export async function generateContent<T>(
   prompt: string,
-  systemInstruction?: string
+  systemInstruction?: string,
+  schema?: z.ZodSchema<T>
 ): Promise<LLMResponse<T>> {
   let lastError: string = "";
+  let currentPrompt = prompt;
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
@@ -82,7 +79,7 @@ export async function generateContent<T>(
         messages.push({ role: "system", content: systemInstruction });
       }
       
-      messages.push({ role: "user", content: prompt });
+      messages.push({ role: "user", content: currentPrompt });
 
       const response = await getClient().chat.completions.create({
         model: ANTIGRAVITY_MODEL,
@@ -97,32 +94,57 @@ export async function generateContent<T>(
       const tokensUsed = response.usage?.total_tokens ?? 0;
 
       // Parse JSON from response
+      let parsedJson: any;
       try {
-        const parsed = JSON.parse(text) as T;
-        return {
-          success: true,
-          data: parsed,
-          error: null,
-          tokensUsed,
-        };
+        parsedJson = JSON.parse(text);
       } catch {
         // Fallback to regex parsing if strict JSON parsing fails
-        const parsed = parseJsonResponse<T>(text);
-        if (!parsed) {
-          return {
-            success: false,
-            data: null,
-            error: "Failed to parse JSON from response",
-            tokensUsed,
-          };
+        parsedJson = parseJsonResponse(text);
+        if (!parsedJson) {
+           throw new Error("Failed to parse JSON from response text");
+        }
+      }
+
+      // Validate with schema if provided
+      if (schema) {
+        const result = schema.safeParse(parsedJson);
+        if (!result.success) {
+          const validationError = fromZodError(result.error);
+          console.warn(`Validation failed (attempt ${attempt + 1}): ${validationError.message}`);
+          
+          // On last attempt, just return the failure
+          if (attempt === MAX_RETRIES - 1) {
+            return {
+              success: false,
+              data: null,
+              error: `Validation error: ${validationError.message}`,
+              tokensUsed,
+            };
+          }
+
+          // Adjust prompt for retry to help LLM fix the structure
+          currentPrompt = `${prompt}\n\nIMPORTANT: Your previous response was invalid. 
+          The JSON structure did not match the required schema. 
+          Errors: ${validationError.message}
+          Please fix the structure and respond with valid JSON.`;
+          
+          continue;
         }
         return {
           success: true,
-          data: parsed,
+          data: result.data,
           error: null,
           tokensUsed,
         };
       }
+
+      return {
+        success: true,
+        data: parsedJson as T,
+        error: null,
+        tokensUsed,
+      };
+
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       lastError = message;
@@ -137,7 +159,13 @@ export async function generateContent<T>(
         continue;
       }
 
-      // Non-rate-limit error, don't retry
+      // If it's a parsing error and we have retries left, try again
+      if (message.includes("parse") && attempt < MAX_RETRIES - 1) {
+         console.warn(`Parsing failed (attempt ${attempt + 1}): ${message}`);
+         continue;
+      }
+
+      // Non-rate-limit/non-parsing error or last attempt, don't retry
       break;
     }
   }
@@ -149,6 +177,15 @@ export async function generateContent<T>(
     tokensUsed: 0,
   };
 }
+
+/**
+ * Utility to format Zod errors for LLM feedback
+ */
+function fromZodError(error: z.ZodError): { message: string } {
+  const issues = error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join("; ");
+  return { message: issues };
+}
+
 
 /**
  * Parse JSON from LLM response text

@@ -15,6 +15,7 @@ import type {
 import { detectAnomalies } from "../lib/analyzer/anomaly-detector.ts";
 import { fetchCurrentQuote } from "../lib/market-data/index.ts";
 import { analyzeAnomaly } from "../lib/analyzer/anomaly-analyzer.ts";
+import { isMarketOpen } from "../lib/market-hours.ts";
 
 let intervalId: ReturnType<typeof setInterval> | null = null;
 let clockIntervalId: ReturnType<typeof setInterval> | null = null;
@@ -88,6 +89,11 @@ export function stopMonitoring() {
 
 async function runCheck() {
   try {
+    // Check if market is open
+    if (!isMarketOpen()) {
+      return;
+    }
+
     const result = await updateAllPredictions();
 
     // 1. Broadcast prices
@@ -122,18 +128,12 @@ async function runCheck() {
         continue;
       }
 
-      // We need the full quote for volume, so we might need to fetch it or rely on what we have.
-      // Ideally updateAllPredictions should return full quotes if we want to be efficient.
-      // For now, let's re-fetch quote if we want accurate volume, OR
-      // assume updateAllPredictions is optimized enough (it fetches internally).
-      // Optimization: Let's fetch quote here only if we suspect something or just use the price we have?
-      // Actually, detectAnomalies needs volume. Let's fetch quote again (cached ideally) or rely on a shared cache.
-      // Since fetchCurrentQuote caches for a short time or we can just call it.
+      // map detected anomalies to full quotes. We already have the full quotes 
+      // in result.currentQuotes from updateAllPredictions().
+      const quoteData = result.currentQuotes[ticker];
+      if (!quoteData) continue;
 
-      const quoteResult = await fetchCurrentQuote(ticker);
-      if (!quoteResult.success || !quoteResult.data) continue;
-
-      const anomalies = detectAnomalies(ticker, quoteResult.data);
+      const anomalies = detectAnomalies(ticker, quoteData);
 
       if (anomalies.length > 0) {
         anomalyCooldowns.set(ticker, Date.now());
@@ -144,7 +144,7 @@ async function runCheck() {
         
         if (firstAnomaly) {
           try {
-              analysis = await analyzeAnomaly(ticker, firstAnomaly, quoteResult.data);
+              analysis = await analyzeAnomaly(ticker, firstAnomaly, quoteData);
           } catch (e) {
               console.error(`Failed to analyze anomaly for ${ticker}:`, e);
           }

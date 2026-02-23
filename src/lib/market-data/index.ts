@@ -10,12 +10,13 @@
  */
 
 export * from "./types.ts";
-export { fetchQuote, fetchQuoteSummary, fetchHistorical, fetchMultipleQuotes } from "./yahoo-client.ts";
+export { fetchQuote, fetchQuoteSummary, fetchHistorical, fetchMultipleQuotes, type YahooQuoteData } from "./yahoo-client.ts";
 export { fetchFundamentals, fetchMultipleFundamentals } from "./fundamental.ts";
 export {
   fetchPriceHistory,
   fetchCurrentQuote,
   calculateTechnicalSummary,
+  mapYahooQuoteToStockQuote,
 } from "./technical.ts";
 
 import type { StockData, FetchResult } from "./types.ts";

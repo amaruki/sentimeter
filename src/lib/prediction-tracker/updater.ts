@@ -4,7 +4,7 @@
  * Updates prediction status in database based on current prices.
  */
 
-import type { TrackedPrediction, TrackingResult, StatusUpdate, PredictionSummary } from "./types.ts";
+import type { TrackedPrediction, TrackingResult, PredictionSummary } from "./types.ts";
 import {
   checkStatusChange,
   calculatePnlPct,
@@ -18,7 +18,7 @@ import {
   getRecommendationsByDate,
 } from "../database/queries.ts";
 import type { Recommendation } from "../database/types.ts";
-import { fetchMultipleQuotes, fetchCurrentQuote } from "../market-data/index.ts";
+import { fetchMultipleQuotes, fetchCurrentQuote, mapYahooQuoteToStockQuote } from "../market-data/index.ts";
 
 /**
  * Update all active predictions with current prices
@@ -30,6 +30,7 @@ export async function updateAllPredictions(): Promise<TrackingResult> {
     statusUpdates: [],
     errors: [],
     currentPrices: {},
+    currentQuotes: {},
   };
 
   // Get all active recommendations
@@ -56,6 +57,7 @@ export async function updateAllPredictions(): Promise<TrackingResult> {
         if (price !== undefined) {
              priceMap.set(ticker, price);
              result.currentPrices[ticker] = price;
+             result.currentQuotes[ticker] = mapYahooQuoteToStockQuote(ticker, quoteResult.data);
         }
       } else if (quoteResult.error) {
            result.errors.push(`Failed to fetch price for ${ticker}: ${quoteResult.error}`);

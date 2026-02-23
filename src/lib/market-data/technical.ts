@@ -61,6 +61,26 @@ export async function fetchPriceHistory(
 }
 
 /**
+ * Map Yahoo quote data to our internal StockQuote type
+ */
+export function mapYahooQuoteToStockQuote(ticker: string, quote: any): StockQuote {
+  return {
+    ticker: fromYahooTicker(ticker).toUpperCase(),
+    price: quote.regularMarketPrice ?? 0,
+    open: quote.regularMarketOpen ?? 0,
+    high: quote.regularMarketDayHigh ?? 0,
+    low: quote.regularMarketDayLow ?? 0,
+    previousClose: quote.regularMarketPreviousClose ?? 0,
+    volume: quote.regularMarketVolume ?? 0,
+    change: quote.regularMarketChange ?? 0,
+    changePercent: quote.regularMarketChangePercent ?? 0,
+    averageVolume: quote.averageDailyVolume10Day ?? 0,
+    marketState: mapMarketState(quote.marketState),
+    lastUpdated: new Date(),
+  };
+}
+
+/**
  * Fetch current quote for a stock
  */
 export async function fetchCurrentQuote(
@@ -76,23 +96,7 @@ export async function fetchCurrentQuote(
     };
   }
 
-  const quote = quoteResult.data;
-
-  const stockQuote: StockQuote = {
-    ticker: fromYahooTicker(ticker).toUpperCase(),
-    price: quote.regularMarketPrice ?? 0,
-    open: quote.regularMarketOpen ?? 0,
-    high: quote.regularMarketDayHigh ?? 0,
-    low: quote.regularMarketDayLow ?? 0,
-    previousClose: quote.regularMarketPreviousClose ?? 0,
-    volume: quote.regularMarketVolume ?? 0,
-    change: quote.regularMarketChange ?? 0,
-    changePercent: quote.regularMarketChangePercent ?? 0,
-    averageVolume: quote.averageDailyVolume10Day ?? 0,
-    marketState: mapMarketState(quote.marketState),
-    lastUpdated: new Date(),
-  };
-
+  const stockQuote = mapYahooQuoteToStockQuote(ticker, quoteResult.data);
   return { success: true, data: stockQuote, error: null };
 }
 
