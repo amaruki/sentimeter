@@ -97,17 +97,31 @@ export function SummaryTable({ recommendations, activePositions, date }: Summary
   const [page, setPage] = useState(0);
 
   const rows: TableRow[] = [
-    ...recommendations.map((rec): TableRow => ({
-      ticker: rec.ticker,
-      signal: "BUY",
-      entry: rec.entryPrice,
-      current: rec.currentPrice,
-      target: rec.targetPrice,
-      stopLoss: rec.stopLoss,
-      pnl: null,
-      score: rec.overallScore,
-      days: 0,
-    })),
+    ...recommendations.map((rec): TableRow => {
+      const recDate = new Date(rec.recommendationDate);
+      const targetDate = new Date(date);
+      recDate.setHours(0, 0, 0, 0);
+      targetDate.setHours(0, 0, 0, 0);
+      const diffTime = targetDate.getTime() - recDate.getTime();
+      const diffDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+
+      const pnl =
+        rec.currentPrice !== null && rec.currentPrice !== undefined
+          ? ((rec.currentPrice - rec.entryPrice) / rec.entryPrice) * 100
+          : null;
+
+      return {
+        ticker: rec.ticker,
+        signal: "BUY",
+        entry: rec.entryPrice,
+        current: rec.currentPrice,
+        target: rec.targetPrice,
+        stopLoss: rec.stopLoss,
+        pnl: pnl,
+        score: rec.overallScore,
+        days: diffDays,
+      };
+    }),
     ...activePositions.map((pos): TableRow => ({
       ticker: pos.ticker,
       signal: deriveSignal(pos),

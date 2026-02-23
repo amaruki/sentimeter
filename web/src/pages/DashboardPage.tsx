@@ -22,6 +22,7 @@ import {
   useWebSocket,
   useAvoidList, useMarketOutlook, formatPercent,
   type ActivePositionItem,
+  type RecommendationItem,
 } from "@/lib";
 import { useState, useEffect, useCallback } from "react";
 
@@ -32,12 +33,14 @@ export function DashboardPage() {
   const { showToast } = useToast();
 
   const [activePositions, setActivePositions] = useState<ActivePositionItem[]>([]);
+  const [recommendations, setRecommendations] = useState<RecommendationItem[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Initialize active positions from API data
+  // Initialize positions from API data
   useEffect(() => {
-    if (data?.activePositions) {
-      setActivePositions(data.activePositions);
+    if (data) {
+      if (data.activePositions) setActivePositions(data.activePositions);
+      if (data.recommendations) setRecommendations(data.recommendations);
     }
   }, [data]);
 
@@ -56,6 +59,18 @@ export function DashboardPage() {
               };
             }
             return pos;
+          })
+        );
+        setRecommendations((prev) =>
+          prev.map((rec) => {
+            const newPrice = message.prices[rec.ticker];
+            if (newPrice) {
+              return {
+                ...rec,
+                currentPrice: newPrice,
+              };
+            }
+            return rec;
           })
         );
       } else if (message.type === "STATUS_UPDATE") {
@@ -186,7 +201,7 @@ export function DashboardPage() {
       <StatsCard stats={stats} />
 
       <SummaryTable
-        recommendations={data.recommendations}
+        recommendations={recommendations}
         activePositions={activePositions}
         date={data.date}
       />
@@ -211,13 +226,13 @@ export function DashboardPage() {
 
       <section>
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          New Recommendations ({data.recommendations.length})
+          New Recommendations ({recommendations.length})
         </h2>
-        {data.recommendations.length === 0 ? (
+        {recommendations.length === 0 ? (
           <EmptyState message="No new recommendations for today" />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {data.recommendations.map((rec) => (
+            {recommendations.map((rec) => (
               <RecommendationCard
                 key={`${rec.ticker}-${rec.recommendationDate}`}
                 recommendation={rec}
