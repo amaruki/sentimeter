@@ -197,3 +197,26 @@ export interface JobExecutionInsert {
   schedule: JobSchedule;
   executionDate: string;
 }
+
+// ============================================================================
+// Telegram Users
+// ============================================================================
+
+export interface TelegramUser {
+  id: number;
+  chatId: number;
+  username: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface TelegramUserInsert {
+  chatId: number;
+  username?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  isActive?: boolean;
+}

@@ -5,6 +5,7 @@
  */
 
 import { generateContent } from "./llm-client.ts";
+import { tickerExtractionSchema } from "./schemas.ts";
 import type {
   NewsArticleInput,
   ExtractedTicker,
@@ -70,7 +71,11 @@ async function extractFromBatch(articles: NewsArticleInput[]): Promise<Extracted
 
   const prompt = `Extract Indonesian stock tickers from these news headlines:\n\n${articlesText}\n\nRespond with JSON only.`;
 
-  const response = await generateContent<TickerExtractionResponse>(prompt, SYSTEM_INSTRUCTION);
+  const response = await generateContent<TickerExtractionResponse>(
+    prompt,
+    SYSTEM_INSTRUCTION,
+    tickerExtractionSchema
+  );
 
   if (!response.success || !response.data?.tickers) {
     return [];

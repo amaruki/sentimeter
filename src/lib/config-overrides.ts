@@ -15,18 +15,9 @@ export interface ConfigOverrides {
     eveningHour?: number;
     eveningMinute?: number;
   };
-  telegram?: {
-    botToken?: string;
-    chatId?: string;
-  };
   anomaly?: {
     priceChangePct?: number;
     volumeMultiplier?: number;
-  };
-  llm?: {
-    baseUrl?: string;
-    model?: string;
-    apiKey?: string;
   };
 }
 
@@ -37,8 +28,10 @@ const DEFAULT_SCHEDULER = {
   eveningMinute: 30,
 };
 
-const DATA_DIR = "data";
-const CONFIG_PATH = `${DATA_DIR}/config-overrides.json`;
+import { join } from "path";
+
+const DATA_DIR = join(process.cwd(), "data");
+const CONFIG_PATH = join(DATA_DIR, "config-overrides.json");
 
 let overrides: ConfigOverrides = {};
 
@@ -86,40 +79,23 @@ export async function updateOverrides(partial: ConfigOverrides): Promise<void> {
     ...(partial.scheduler && {
       scheduler: { ...overrides.scheduler, ...partial.scheduler },
     }),
-    ...(partial.telegram && {
-      telegram: { ...overrides.telegram, ...partial.telegram },
-    }),
     ...(partial.anomaly && {
       anomaly: { ...overrides.anomaly, ...partial.anomaly },
-    }),
-    ...(partial.llm && {
-      llm: { ...overrides.llm, ...partial.llm },
     }),
   };
   await Bun.write(CONFIG_PATH, JSON.stringify(overrides, null, 2));
 }
 
 export interface EnvConfig {
-  telegram: { botToken?: string; chatId?: string };
   anomaly: { priceChangePct: number; volumeMultiplier: number };
-  antigravity: { baseUrl: string; apiKey: string; model: string };
 }
 
 export function getEffectiveConfig(env: EnvConfig): EnvConfig {
   const o = overrides;
   return {
-    telegram: {
-      botToken: o.telegram?.botToken ?? env.telegram.botToken,
-      chatId: o.telegram?.chatId ?? env.telegram.chatId,
-    },
     anomaly: {
       priceChangePct: o.anomaly?.priceChangePct ?? env.anomaly.priceChangePct,
       volumeMultiplier: o.anomaly?.volumeMultiplier ?? env.anomaly.volumeMultiplier,
-    },
-    antigravity: {
-      baseUrl: o.llm?.baseUrl ?? env.antigravity.baseUrl,
-      apiKey: o.llm?.apiKey ?? env.antigravity.apiKey,
-      model: o.llm?.model ?? env.antigravity.model,
     },
   };
 }

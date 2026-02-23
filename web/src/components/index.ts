@@ -10,3 +10,5 @@ export { SummaryTable } from "./SummaryTable";
 export { AvoidSection } from "./AvoidSection";
 export { MarketOutlookPanel } from "./MarketOutlookPanel";
 export { ToastProvider, useToast } from "./Toast";
+export { TelegramCallToAction } from "./TelegramCallToAction";
+export { AdminGuard } from "./AdminGuard";

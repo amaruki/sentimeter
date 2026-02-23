@@ -1,39 +1,28 @@
-/**
- * LLM Client
- *
- * Uses Google GenAI SDK with Antigravity Manager proxy.
- * Replaces direct Gemini API calls to avoid quota issues.
- */
+import OpenAI from "openai";
+import { z } from "zod";
 
-import { GoogleGenAI } from "@google/genai";
-import { existsSync, readFileSync, unlinkSync } from "fs";
-import { join } from "path";
-
-const ANTIGRAVITY_BASE_URL = process.env.ANTIGRAVITY_BASE_URL ?? "http://127.0.0.1:8045";
-const ANTIGRAVITY_API_KEY = process.env.ANTIGRAVITY_API_KEY ?? "";
+const ANTIGRAVITY_BASE_URL = process.env.ANTIGRAVITY_BASE_URL ?? "http://127.0.0.1:8045/v1";
+const ANTIGRAVITY_API_KEY = process.env.ANTIGRAVITY_API_KEY ?? "dummy-key"; // OpenAI SDK requires a key, even if dummy
 const ANTIGRAVITY_MODEL = process.env.ANTIGRAVITY_MODEL ?? "gemini-3-flash";
 const MAX_RETRIES = 3;
 const BASE_DELAY_MS = 2000;
-const OUTPUT_FILE = "llm-output.json";
 
-let genai: GoogleGenAI | null = null;
+let openai: OpenAI | null = null;
 
 /**
- * Get or create the GenAI client
+ * Get or create the OpenAI client
  */
-function getClient(): GoogleGenAI {
-  if (!genai) {
-    if (!ANTIGRAVITY_API_KEY) {
-      console.warn("WARNING: ANTIGRAVITY_API_KEY not set in environment");
+function getClient(): OpenAI {
+  if (!openai) {
+    if (!process.env.ANTIGRAVITY_API_KEY) {
+      console.warn("WARNING: ANTIGRAVITY_API_KEY not set in environment, using dummy key");
     }
-    genai = new GoogleGenAI({
+    openai = new OpenAI({
       apiKey: ANTIGRAVITY_API_KEY,
-      httpOptions: {
-        baseUrl: ANTIGRAVITY_BASE_URL,
-      },
+      baseURL: ANTIGRAVITY_BASE_URL,
     });
   }
-  return genai;
+  return openai;
 }
 
 export interface LLMResponse<T> {
@@ -60,65 +49,102 @@ function isRateLimitError(error: unknown): boolean {
       message.includes("rate") ||
       message.includes("quota") ||
       message.includes("429") ||
-      message.includes("resource_exhausted")
+      message.includes("resource_exhausted") 
     );
+  }
+  // OpenAI specific error object structure (if not standard Error)
+  if (typeof error === 'object' && error !== null && 'status' in error) {
+      return (error as any).status === 429;
   }
   return false;
 }
 
 /**
- * Generate content using Antigravity Manager (Gemini protocol)
+ * Generate content using Antigravity Manager (OpenAI protocol)
+ * Supports Zod validation and auto-retry on validation failure
  */
 export async function generateContent<T>(
   prompt: string,
-  systemInstruction?: string
+  systemInstruction?: string,
+  schema?: z.ZodSchema<T>
 ): Promise<LLMResponse<T>> {
   let lastError: string = "";
+  let currentPrompt = prompt;
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
-      const response = await getClient().models.generateContent({
+      const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [];
+      
+      if (systemInstruction) {
+        messages.push({ role: "system", content: systemInstruction });
+      }
+      
+      messages.push({ role: "user", content: currentPrompt });
+
+      const response = await getClient().chat.completions.create({
         model: ANTIGRAVITY_MODEL,
-        contents: prompt,
-        config: {
-          systemInstruction: systemInstruction,
-          temperature: 0.3,
-          topP: 0.8,
-          maxOutputTokens: 4096,
-          responseMimeType: "application/json", // Force JSON output
-        },
+        messages: messages,
+        temperature: 0.3,
+        top_p: 0.8,
+        max_tokens: 4096,
+        response_format: { type: "json_object" },
       });
 
-      const text = response.text ?? "";
-      const tokensUsed = response.usageMetadata?.totalTokenCount ?? 0;
+      const text = response.choices[0]?.message?.content ?? "";
+      const tokensUsed = response.usage?.total_tokens ?? 0;
 
-      // Parse JSON from response (should be clean JSON now)
+      // Parse JSON from response
+      let parsedJson: any;
       try {
-        const parsed = JSON.parse(text) as T;
-        return {
-          success: true,
-          data: parsed,
-          error: null,
-          tokensUsed,
-        };
+        parsedJson = JSON.parse(text);
       } catch {
-        // Fallback to regex parsing
-        const parsed = parseJsonResponse<T>(text);
-        if (!parsed) {
-          return {
-            success: false,
-            data: null,
-            error: "Failed to parse JSON from response",
-            tokensUsed,
-          };
+        // Fallback to regex parsing if strict JSON parsing fails
+        parsedJson = parseJsonResponse(text);
+        if (!parsedJson) {
+           throw new Error("Failed to parse JSON from response text");
+        }
+      }
+
+      // Validate with schema if provided
+      if (schema) {
+        const result = schema.safeParse(parsedJson);
+        if (!result.success) {
+          const validationError = fromZodError(result.error);
+          console.warn(`Validation failed (attempt ${attempt + 1}): ${validationError.message}`);
+          
+          // On last attempt, just return the failure
+          if (attempt === MAX_RETRIES - 1) {
+            return {
+              success: false,
+              data: null,
+              error: `Validation error: ${validationError.message}`,
+              tokensUsed,
+            };
+          }
+
+          // Adjust prompt for retry to help LLM fix the structure
+          currentPrompt = `${prompt}\n\nIMPORTANT: Your previous response was invalid. 
+          The JSON structure did not match the required schema. 
+          Errors: ${validationError.message}
+          Please fix the structure and respond with valid JSON.`;
+          
+          continue;
         }
         return {
           success: true,
-          data: parsed,
+          data: result.data,
           error: null,
           tokensUsed,
         };
       }
+
+      return {
+        success: true,
+        data: parsedJson as T,
+        error: null,
+        tokensUsed,
+      };
+
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       lastError = message;
@@ -133,7 +159,13 @@ export async function generateContent<T>(
         continue;
       }
 
-      // Non-rate-limit error, don't retry
+      // If it's a parsing error and we have retries left, try again
+      if (message.includes("parse") && attempt < MAX_RETRIES - 1) {
+         console.warn(`Parsing failed (attempt ${attempt + 1}): ${message}`);
+         continue;
+      }
+
+      // Non-rate-limit/non-parsing error or last attempt, don't retry
       break;
     }
   }
@@ -145,6 +177,15 @@ export async function generateContent<T>(
     tokensUsed: 0,
   };
 }
+
+/**
+ * Utility to format Zod errors for LLM feedback
+ */
+function fromZodError(error: z.ZodError): { message: string } {
+  const issues = error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join("; ");
+  return { message: issues };
+}
+
 
 /**
  * Parse JSON from LLM response text
@@ -179,7 +220,11 @@ function parseJsonResponse<T>(text: string): T | null {
  * Check if Antigravity API is configured
  */
 export function isLLMConfigured(): boolean {
-  return ANTIGRAVITY_API_KEY.length > 0;
+   // OpenAI SDK always requires an API key, but we default to dummy if not set.
+   // So effectively it is always "configured" on the client side, 
+   // but might fail if the server requires a valid key.
+   // For now checking if the env var is present or we used the default.
+  return process.env.ANTIGRAVITY_API_KEY ? process.env.ANTIGRAVITY_API_KEY.length > 0 : false;
 }
 
 /**

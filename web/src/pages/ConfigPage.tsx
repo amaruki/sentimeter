@@ -11,6 +11,7 @@ import {
   SchedulerPanel,
   Card,
   useToast,
+  AdminGuard,
 } from "@/components";
 import { useScheduler, useConfig, patchConfig, type AppConfig, type ConfigPatch } from "@/lib";
 
@@ -82,7 +83,7 @@ function Field({
   );
 }
 
-export function ConfigPage() {
+function ConfigContent() {
   const {
     state: schedulerState,
     loading: schedulerLoading,
@@ -122,23 +123,10 @@ export function ConfigPage() {
         eveningMinute: form.scheduler.eveningMinute ?? config.scheduler.eveningMinute,
       };
     }
-    if (form.telegram) {
-      patch.telegram = {
-        botToken: form.telegram.botToken ?? "",
-        chatId: form.telegram.chatId ?? "",
-      };
-    }
     if (form.anomaly) {
       patch.anomaly = {
         priceChangePct: form.anomaly.priceChangePct ?? config.anomaly.priceChangePct,
         volumeMultiplier: form.anomaly.volumeMultiplier ?? config.anomaly.volumeMultiplier,
-      };
-    }
-    if (form.llm) {
-      patch.llm = {
-        baseUrl: form.llm.baseUrl ?? config.llm.baseUrl,
-        model: form.llm.model ?? config.llm.model,
-        apiKey: form.llm.apiKey ?? config.llm.apiKey,
       };
     }
     setSaving(true);
@@ -152,6 +140,12 @@ export function ConfigPage() {
       setSaving(false);
     }
   }, [config, form, refetch, showToast]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("admin_password");
+    showToast("Config locked.", "info");
+    setTimeout(() => window.location.reload(), 500);
+  };
 
   const loading = configLoading || (schedulerLoading && !schedulerState);
   const error = configError;
@@ -173,9 +167,7 @@ export function ConfigPage() {
   }
 
   const s = form.scheduler ?? config?.scheduler;
-  const t = form.telegram ?? config?.telegram;
   const a = form.anomaly ?? config?.anomaly;
-  const l = form.llm ?? config?.llm;
 
   return (
     <div className="space-y-8">
@@ -183,17 +175,26 @@ export function ConfigPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Config</h1>
           <p className="text-gray-500">
-            Schedule times, Telegram bot, anomaly detection, and LLM settings.
+            Schedule times and anomaly detection thresholds.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving || !config}
-          className="btn-primary"
-        >
-          {saving ? "Saving..." : "Save changes"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="btn text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+          >
+            Lock Config
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving || !config}
+            className="btn-primary"
+          >
+            {saving ? "Saving..." : "Save changes"}
+          </button>
+        </div>
       </div>
 
       <ConfigSection
@@ -252,24 +253,6 @@ export function ConfigPage() {
         )}
       </ConfigSection>
 
-      <ConfigSection title="Telegram" subtitle="Bot token and chat ID for notifications.">
-        <Card>
-          <Field
-            label="Bot token"
-            type="password"
-            value={t?.botToken ?? ""}
-            onChange={(v) => updateForm("telegram", "botToken", String(v))}
-            placeholder="Leave empty to keep current"
-          />
-          <Field
-            label="Chat ID"
-            value={t?.chatId ?? ""}
-            onChange={(v) => updateForm("telegram", "chatId", String(v))}
-            placeholder="Telegram chat ID"
-          />
-        </Card>
-      </ConfigSection>
-
       <ConfigSection title="Anomaly detection" subtitle="Thresholds for alerts.">
         <Card>
           <Field
@@ -290,30 +273,14 @@ export function ConfigPage() {
           />
         </Card>
       </ConfigSection>
-
-      <ConfigSection title="LLM (Antigravity)" subtitle="Model and endpoint.">
-        <Card>
-          <Field
-            label="Base URL"
-            value={l?.baseUrl ?? ""}
-            onChange={(v) => updateForm("llm", "baseUrl", String(v))}
-            placeholder="http://127.0.0.1:8045/v1"
-          />
-          <Field
-            label="Model"
-            value={l?.model ?? ""}
-            onChange={(v) => updateForm("llm", "model", String(v))}
-            placeholder="gemini-2.0-flash"
-          />
-          <Field
-            label="API key"
-            type="password"
-            value={l?.apiKey ?? ""}
-            onChange={(v) => updateForm("llm", "apiKey", String(v))}
-            placeholder="Leave empty to keep current"
-          />
-        </Card>
-      </ConfigSection>
     </div>
+  );
+}
+
+export function ConfigPage() {
+  return (
+    <AdminGuard>
+      <ConfigContent />
+    </AdminGuard>
   );
 }

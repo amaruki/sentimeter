@@ -29,20 +29,9 @@ export interface ConfigResponse {
     eveningTime: string;
     nextRun: string | null;
   };
-  telegram: {
-    configured: boolean;
-    botToken: string;
-    chatId: string;
-  };
   anomaly: {
     priceChangePct: number;
     volumeMultiplier: number;
-  };
-  llm: {
-    baseUrl: string;
-    model: string;
-    apiKey: string;
-    configured: boolean;
   };
 }
 
@@ -61,25 +50,9 @@ function buildConfigResponse(): ConfigResponse {
       eveningTime: state.eveningTime,
       nextRun: state.nextRun,
     },
-    telegram: {
-      configured: Boolean(
-        effective.telegram.botToken?.trim() && effective.telegram.chatId?.trim()
-      ),
-      botToken: effective.telegram.botToken ?? "",
-      chatId: effective.telegram.chatId ?? "",
-    },
     anomaly: {
       priceChangePct: effective.anomaly.priceChangePct,
       volumeMultiplier: effective.anomaly.volumeMultiplier,
-    },
-    llm: {
-      baseUrl: effective.antigravity.baseUrl,
-      model: effective.antigravity.model,
-      apiKey: effective.antigravity.apiKey ?? "",
-      configured: Boolean(
-        effective.antigravity.apiKey?.trim() ||
-          effective.antigravity.baseUrl?.trim()
-      ),
     },
   };
 }
@@ -108,31 +81,16 @@ function parsePatchBody(body: unknown): ConfigOverrides | null {
     if (typeof s.eveningHour === "number") out.scheduler.eveningHour = s.eveningHour;
     if (typeof s.eveningMinute === "number") out.scheduler.eveningMinute = s.eveningMinute;
   }
-  if (o.telegram && typeof o.telegram === "object") {
-    const t = o.telegram as Record<string, unknown>;
-    out.telegram = {};
-    if (typeof t.botToken === "string") out.telegram.botToken = t.botToken;
-    if (typeof t.chatId === "string") out.telegram.chatId = t.chatId;
-  }
   if (o.anomaly && typeof o.anomaly === "object") {
     const a = o.anomaly as Record<string, unknown>;
     out.anomaly = {};
     if (typeof a.priceChangePct === "number") out.anomaly.priceChangePct = a.priceChangePct;
     if (typeof a.volumeMultiplier === "number") out.anomaly.volumeMultiplier = a.volumeMultiplier;
   }
-  if (o.llm && typeof o.llm === "object") {
-    const l = o.llm as Record<string, unknown>;
-    out.llm = {};
-    if (typeof l.baseUrl === "string") out.llm.baseUrl = l.baseUrl;
-    if (typeof l.model === "string") out.llm.model = l.model;
-    if (typeof l.apiKey === "string") out.llm.apiKey = l.apiKey;
-  }
 
   if (
     !out.scheduler &&
-    !out.telegram &&
-    !out.anomaly &&
-    !out.llm
+    !out.anomaly
   ) {
     return null;
   }

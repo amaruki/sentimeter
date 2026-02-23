@@ -11,7 +11,7 @@ import { join } from "path";
 import { mkdirSync, readdirSync, unlinkSync } from "fs";
 
 const CACHE_DIR = join(import.meta.dir, "../../data/step-cache");
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hour
 
 interface CacheEntry<T> {
   cachedAt: string;
@@ -27,7 +27,7 @@ function getCachePath(date: string, schedule: string, step: number): string {
 }
 
 /**
- * Read cached step output. Returns null if missing or expired (>1 hour).
+ * Read cached step output. Returns null if missing or expired (>6 hour).
  */
 export async function getStepCache<T>(date: string, schedule: string, step: number): Promise<T | null> {
   const file = Bun.file(getCachePath(date, schedule, step));

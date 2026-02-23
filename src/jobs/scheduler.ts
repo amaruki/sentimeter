@@ -26,15 +26,30 @@ const jobs: ScheduledJob[] = [
   { schedule: "evening", hour: EVENING_HOUR, minute: EVENING_MINUTE, timeout: null },
 ];
 
-function getNextRunTime(hour: number, minute: number): Date {
+function getNextRunTime(wibHour: number, wibMinute: number): Date {
   const now = new Date();
-  const next = new Date(now);
+  
+  // Get current date components in WIB (UTC+7)
+  const options = { timeZone: "Asia/Jakarta", hour12: false };
+  const parts = new Intl.DateTimeFormat('en-US', {
+    ...options,
+    year: 'numeric', month: 'numeric', day: 'numeric',
+  }).formatToParts(now);
+  
+  const getPart = (type: string) => parseInt(parts.find(p => p.type === type)?.value || "0");
+  const wibYear = getPart('year');
+  const wibMonth = getPart('month') - 1; // 0-indexed in JS Date
+  const wibDay = getPart('day');
+  
+  // Construct target date by converting WIB to UTC
+  // WIB is UTC+7, so UTC time is WIB time - 7 hours
+  const next = new Date();
+  next.setUTCFullYear(wibYear, wibMonth, wibDay);
+  next.setUTCHours(wibHour - 7, wibMinute, 0, 0);
 
-  next.setHours(hour, minute, 0, 0);
-
-  // If the time has passed today, schedule for tomorrow
+  // If the time has passed today (in absolute terms), schedule for tomorrow
   if (next <= now) {
-    next.setDate(next.getDate() + 1);
+    next.setUTCDate(next.getUTCDate() + 1);
   }
 
   return next;
@@ -51,7 +66,7 @@ function scheduleJob(job: ScheduledJob): void {
   const delay = nextRun.getTime() - Date.now();
 
   console.log(
-    `📅 Scheduled ${job.schedule} job for ${nextRun.toLocaleString("id-ID")} (in ${formatDuration(delay)})`
+    `📅 Scheduled ${job.schedule} job for ${nextRun.toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB (in ${formatDuration(delay)})`
   );
 
   job.timeout = setTimeout(async () => {

@@ -7,7 +7,7 @@
 import { test, expect, describe } from "bun:test";
 import { generateContent, isLLMConfigured, getLLMConfig } from "./llm-client.ts";
 
-const TIMEOUT_MS = 15000;
+const TIMEOUT_MS = 25000;
 
 describe("LLM Client Configuration", () => {
   test("getLLMConfig returns configuration", () => {

@@ -13,6 +13,7 @@ coverage
 # logs
 logs
 _.log
+*.log
 report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # dotenv environment variable files
@@ -38,4 +39,4 @@ data/*.sqlite
 data/*.db
 data/*.db-shm
 data/*.db-wal
-data/config-overrides.json
+data/*.json

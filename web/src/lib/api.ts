@@ -22,10 +22,18 @@ async function fetchApi<T>(
   endpoint: string,
   options?: RequestInit
 ): Promise<T> {
+  const headers = {
+    "Content-Type": "application/json",
+    ...options?.headers,
+  } as Record<string, string>;
+
+  const adminPassword = localStorage.getItem("admin_password");
+  if (adminPassword) {
+    headers["X-Admin-Password"] = adminPassword;
+  }
+
   const response = await fetch(`${API_BASE}${endpoint}`, {
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers,
     ...options,
   });
 

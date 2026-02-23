@@ -638,6 +638,15 @@ bunx tsc --noEmit
 
 # Frontend
 bunx tsc --noEmit --project web/tsconfig.json
+
+```
+## Production Deployment
+
+```bash
+bun run build
+
+pm2 start ecosystem.config.cjs --env production
+pm2 save
 ```
 
 ### Adding a New News Portal
