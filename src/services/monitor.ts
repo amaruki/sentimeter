@@ -175,13 +175,20 @@ async function notifyStatusChange(update: StatusUpdate) {
   const { ticker, previousStatus, newStatus, price, reason } = update;
   const emoji = getStatusEmoji(newStatus);
 
-  const message = `
-${emoji} *${ticker} Update*
+  const time = update.timestamp.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
 
-Status: ${formatStatus(previousStatus)} ➡️ ${formatStatus(newStatus)}
-Price: ${price}
-Reason: ${reason}
-Time: ${update.timestamp.toLocaleTimeString("id-ID")}
+  const message = `
+${emoji} *${ticker} Status Update*
+
+*Previous:* ${formatStatus(previousStatus)}
+*New:* ${formatStatus(newStatus)}
+
+💰 *Price:* ${price}
+⏱ *Time:* ${time}
+
+📝 *Details:* ${reason}
+
+_⚠️ Disclaimer: Prices may be delayed by up to 10 mins. Not financial advice. DYOR._
   `.trim();
 
   await sendTelegramNotification(message);
@@ -192,12 +199,14 @@ async function notifyAnomaly(anomaly: AnomalyDetected, analysis: string) {
     const message = `
 ${emoji} *${anomaly.ticker} Anomaly Detected*
 
-Type: ${anomaly.type}
-Value: ${anomaly.type === "PRICE" ? anomaly.value.toFixed(2) + "%" : anomaly.value}
-Message: ${anomaly.message}
+*Type:* ${anomaly.type}
+*Value:* ${anomaly.type === "PRICE" ? anomaly.value.toFixed(2) + "%" : anomaly.value}
+*Details:* ${anomaly.message}
 
 🤖 *AI Analysis:*
 ${analysis}
+
+_⚠️ Disclaimer: Prices may be delayed by up to 10 mins. Not financial advice. DYOR._
     `.trim();
 
     await sendTelegramNotification(message);
