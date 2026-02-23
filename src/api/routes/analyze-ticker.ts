@@ -248,6 +248,7 @@ export async function handleAnalyzeTicker(request: Request): Promise<Response> {
       analysis: analysisResult,
     };
 
+    console.log("Ticker analysis response:", response);
     return jsonResponse(successResponse(response), 200, origin);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

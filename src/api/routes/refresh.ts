@@ -32,8 +32,16 @@ export async function handleRefresh(request: Request): Promise<Response> {
       return jsonResponse(successResponse(response), 200, origin);
     }
 
-    // Determine schedule based on time
-    const hour = new Date().getHours();
+    // Determine schedule based on WIB time (UTC+7)
+    const options = { timeZone: "Asia/Jakarta", hour12: false };
+    const parts = new Intl.DateTimeFormat('en-US', {
+      ...options,
+      hour: 'numeric',
+    }).formatToParts(new Date());
+    
+    let hour = parseInt(parts.find(p => p.type === 'hour')?.value || "0");
+    if (hour === 24) hour = 0; // Intl format sometimes returns 24 for 00:00
+
     const schedule: JobSchedule = hour < 12 ? "morning" : "evening";
     const today = new Date().toISOString().slice(0, 10);
 
