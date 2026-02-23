@@ -112,7 +112,7 @@ async function handleUpdate(update: TelegramUpdate) {
   const user = message.from;
 
   if (text === "/start") {
-    console.log(`👤 New Telegram user: ${user.first_name} (${chatId})`);
+    console.log(`👤 New Telegram user: ${user.first_name} ${user.last_name} (${user.username})`);
     
     upsertTelegramUser({
       chatId,
@@ -122,16 +122,43 @@ async function handleUpdate(update: TelegramUpdate) {
       isActive: true,
     });
 
-    await sendDirectMessage(process.env.TELEGRAM_BOT_TOKEN!, chatId, "✅ You are now subscribed to Sentimeter alerts!");
+    const welcomeMsg = `
+🎉 *Welcome to Sentimeter!*
+
+Hello ${user.first_name}! You are now successfully subscribed to receive AI-driven stock alerts. 📈
+
+I will notify you here whenever:
+🟢 A new position is entered
+🎯 A target price is hit
+🛑 A stop loss is triggered
+⏰ A trade expires
+🚀 Unusual volume or price anomalies are detected
+
+_⚠️ Disclaimer: Prices may be delayed by up to 10 mins. Not financial advice. Always DYOR before trading._
+
+🐙 *Open Source:* [GitHub Repository](https://github.com/snowfluke/sentimeter)
+
+Type /stop at any time if you wish to unsubscribe.
+    `.trim();
+
+    await sendDirectMessage(process.env.TELEGRAM_BOT_TOKEN!, chatId, welcomeMsg);
   } else if (text === "/stop") {
-    console.log(`👤 User unsubscribed: ${user.first_name} (${chatId})`);
+    console.log(`👤 User unsubscribed: ${user.first_name} ${user.last_name} (${user.username})`);
     
     upsertTelegramUser({
       chatId,
       isActive: false,
     });
 
-    await sendDirectMessage(process.env.TELEGRAM_BOT_TOKEN!, chatId, "🔕 You have unsubscribed from alerts.");
+    const goodbyeMsg = `
+🔕 *Alerts Disabled*
+
+You have successfully unsubscribed from Sentimeter alerts. 
+
+If you ever want to come back and start receiving notifications again, just type /start! 👋
+    `.trim();
+
+    await sendDirectMessage(process.env.TELEGRAM_BOT_TOKEN!, chatId, goodbyeMsg);
   }
 }
 
