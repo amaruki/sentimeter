@@ -29,7 +29,7 @@ import { useState, useEffect, useCallback } from "react";
 export function DashboardPage() {
   const { data, loading, error, refetch } = useRecommendations();
   const { trigger, loading: refreshing, result: refreshResult } = useRefresh();
-  const { logs, connected, clear: clearLogs } = useLogStream();
+  const { logs, connected } = useLogStream();
   const { showToast } = useToast();
 
   const [activePositions, setActivePositions] = useState<ActivePositionItem[]>([]);
@@ -148,7 +148,7 @@ export function DashboardPage() {
             {data.schedule === "morning" ? "Morning" : "Evening"} session -{" "}
             {currentTime.toLocaleTimeString("id-ID")}
             {isConnected && (
-              <span className="ml-2 text-success-600 text-xs font-medium px-2 py-0.5 bg-success-50 rounded-full animate-pulse">
+              <span className="ml-2 text-success-600 text-xs font-medium px-2 bg-success-50 rounded-full animate-pulse">
                 ● Live
               </span>
             )}
@@ -192,8 +192,7 @@ export function DashboardPage() {
       <LogPanel
         logs={logs}
         connected={connected}
-        onClear={clearLogs}
-        visible={refreshing || refreshResult?.triggered === true}
+        visible={true}
       />
 
       {outlookData && <MarketOutlookPanel data={outlookData} />}
