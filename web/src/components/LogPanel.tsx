@@ -10,7 +10,6 @@ import type { LogEntry } from "@/lib";
 interface LogPanelProps {
   logs: LogEntry[];
   connected: boolean;
-  onClear: () => void;
   visible?: boolean;
 }
 
@@ -30,7 +29,7 @@ const levelIcons: Record<LogEntry["level"], string> = {
   step: "📍",
 };
 
-export function LogPanel({ logs, connected, onClear, visible = false }: LogPanelProps) {
+export function LogPanel({ logs, connected, visible = false }: LogPanelProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -45,7 +44,7 @@ export function LogPanel({ logs, connected, onClear, visible = false }: LogPanel
 
   return (
     <div className="bg-gray-900 rounded-lg overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-2 bg-gray-800">
+      <div className="flex items-center px-4 py-2 bg-gray-800">
         <div className="flex items-center gap-2">
           <span className="text-gray-300 text-sm font-medium">Analysis Logs</span>
           <span
@@ -53,12 +52,6 @@ export function LogPanel({ logs, connected, onClear, visible = false }: LogPanel
             title={connected ? "Connected" : "Disconnected"}
           />
         </div>
-        <button
-          onClick={onClear}
-          className="text-gray-400 hover:text-white text-xs px-2 py-1 rounded hover:bg-gray-700"
-        >
-          Clear
-        </button>
       </div>
       <div
         ref={containerRef}

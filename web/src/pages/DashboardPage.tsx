@@ -21,23 +21,27 @@ import {
   useLogStream,
   useWebSocket,
   useAvoidList, useMarketOutlook, formatPercent,
+  useHistory,
   type ActivePositionItem,
+  type RecommendationItem,
 } from "@/lib";
 import { useState, useEffect, useCallback } from "react";
 
 export function DashboardPage() {
   const { data, loading, error, refetch } = useRecommendations();
   const { trigger, loading: refreshing, result: refreshResult } = useRefresh();
-  const { logs, connected, clear: clearLogs } = useLogStream();
+  const { logs, connected } = useLogStream();
   const { showToast } = useToast();
 
   const [activePositions, setActivePositions] = useState<ActivePositionItem[]>([]);
+  const [recommendations, setRecommendations] = useState<RecommendationItem[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Initialize active positions from API data
+  // Initialize positions from API data
   useEffect(() => {
-    if (data?.activePositions) {
-      setActivePositions(data.activePositions);
+    if (data) {
+      if (data.activePositions) setActivePositions(data.activePositions);
+      if (data.recommendations) setRecommendations(data.recommendations);
     }
   }, [data]);
 
@@ -56,6 +60,18 @@ export function DashboardPage() {
               };
             }
             return pos;
+          })
+        );
+        setRecommendations((prev) =>
+          prev.map((rec) => {
+            const newPrice = message.prices[rec.ticker];
+            if (newPrice) {
+              return {
+                ...rec,
+                currentPrice: newPrice,
+              };
+            }
+            return rec;
           })
         );
       } else if (message.type === "STATUS_UPDATE") {
@@ -102,29 +118,33 @@ export function DashboardPage() {
   const { isConnected } = useWebSocket("/ws", handleWebSocketMessage);
   const { data: avoidData } = useAvoidList();
   const { data: outlookData } = useMarketOutlook();
+  const { data: historyData } = useHistory({ page: 1, pageSize: 1 }); // Fetch summary stats
 
   if (loading) return <LoadingState message="Loading recommendations..." />;
   if (error) return <ErrorState message={error} onRetry={refetch} />;
   if (!data) return <EmptyState message="No data available" />;
 
+  const winRate = historyData?.stats?.winRate ?? data.summary.winRate;
+  const avgReturn = historyData?.stats?.avgReturn ?? data.summary.avgReturn;
+
   const stats = [
     { label: "Active Positions", value: activePositions.length },
-    { label: "Pending Entry", value: data.summary.totalPending },
+    { label: "Pending Entry", value: data.summary.pending },
     {
       label: "Win Rate",
-      value: data.summary.winRate ? `${data.summary.winRate.toFixed(1)}%` : "-",
+      value: winRate !== null ? `${winRate.toFixed(1)}%` : "-",
     },
     {
       label: "Avg Return",
-      value: data.summary.avgReturn
-        ? formatPercent(data.summary.avgReturn)
+      value: avgReturn !== null
+        ? formatPercent(avgReturn)
         : "-",
     },
   ];
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
             Today's Recommendations
@@ -133,7 +153,7 @@ export function DashboardPage() {
             {data.schedule === "morning" ? "Morning" : "Evening"} session -{" "}
             {currentTime.toLocaleTimeString("id-ID")}
             {isConnected && (
-              <span className="ml-2 text-success-600 text-xs font-medium px-2 py-0.5 bg-success-50 rounded-full animate-pulse">
+              <span className="ml-2 text-success-600 text-xs font-medium px-2 bg-success-50 rounded-full animate-pulse">
                 ● Live
               </span>
             )}
@@ -177,8 +197,7 @@ export function DashboardPage() {
       <LogPanel
         logs={logs}
         connected={connected}
-        onClear={clearLogs}
-        visible={refreshing || refreshResult?.triggered === true}
+        visible={true}
       />
 
       {outlookData && <MarketOutlookPanel data={outlookData} />}
@@ -186,7 +205,7 @@ export function DashboardPage() {
       <StatsCard stats={stats} />
 
       <SummaryTable
-        recommendations={data.recommendations}
+        recommendations={recommendations}
         activePositions={activePositions}
         date={data.date}
       />
@@ -211,13 +230,13 @@ export function DashboardPage() {
 
       <section>
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          New Recommendations ({data.recommendations.length})
+          New Recommendations ({recommendations.length})
         </h2>
-        {data.recommendations.length === 0 ? (
+        {recommendations.length === 0 ? (
           <EmptyState message="No new recommendations for today" />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {data.recommendations.map((rec) => (
+            {recommendations.map((rec) => (
               <RecommendationCard
                 key={`${rec.ticker}-${rec.recommendationDate}`}
                 recommendation={rec}
@@ -230,6 +249,18 @@ export function DashboardPage() {
       {avoidData && avoidData.items.length > 0 && (
         <AvoidSection items={avoidData.items} />
       )}
+
+      <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-md shadow-sm">
+        <h3 className="text-amber-800 font-bold mb-1 flex items-center gap-2">
+          Disclaimer: Market Data & Not Financial Advice
+        </h3>
+        <p className="text-amber-700 text-sm">
+          Please note that "real-time" market prices provided via Yahoo Finance may be delayed by up to 10 minutes.
+          The AI recommendations and analyses presented by Sentimeter are for informational and educational purposes only, and are not guaranteed to be perfectly accurate.
+          <strong> Always Do Your Own Research (DYOR)</strong> before making any investment decisions.
+          We are not responsible for any financial losses or damages resulting from the use of this system.
+        </p>
+      </div>
     </div>
   );
 }

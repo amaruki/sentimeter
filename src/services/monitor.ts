@@ -114,9 +114,7 @@ async function runCheck() {
         });
       }
 
-      for (const update of result.statusUpdates) {
-        await notifyStatusChange(update);
-      }
+      await notifyBatchedStatusChanges(result.statusUpdates);
     }
 
     // 3. Anomaly Detection
@@ -171,20 +169,58 @@ async function runCheck() {
   }
 }
 
-async function notifyStatusChange(update: StatusUpdate) {
-  const { ticker, previousStatus, newStatus, price, reason } = update;
-  const emoji = getStatusEmoji(newStatus);
+async function notifyBatchedStatusChanges(updates: StatusUpdate[]) {
+  if (updates.length === 0) return;
 
-  const message = `
-${emoji} *${ticker} Update*
+  // Single update: keep the detailed format
+  if (updates.length === 1) {
+    const update = updates[0];
+    if (!update) return;
+    const emoji = getStatusEmoji(update.newStatus);
+    const time = update.timestamp.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
 
-Status: ${formatStatus(previousStatus)} ➡️ ${formatStatus(newStatus)}
-Price: ${price}
-Reason: ${reason}
-Time: ${update.timestamp.toLocaleTimeString("id-ID")}
-  `.trim();
+    const message = `
+${emoji} *${update.ticker} Status Update*
 
-  await sendTelegramNotification(message);
+*Previous:* ${formatStatus(update.previousStatus)}
+*New:* ${formatStatus(update.newStatus)}
+
+💰 *Price:* ${update.price}
+⏱ *Time:* ${time}
+
+📝 *Details:* ${update.reason}
+
+_⚠️ Disclaimer: Prices may be delayed by up to 10 mins. Not financial advice. DYOR._
+    `.trim();
+
+    await sendTelegramNotification(message);
+    return;
+  }
+
+  // Multiple updates: Group by newStatus
+  const grouped = new Map<PredictionStatus, StatusUpdate[]>();
+  for (const u of updates) {
+    const arr = grouped.get(u.newStatus) || [];
+    arr.push(u);
+    grouped.set(u.newStatus, arr);
+  }
+
+  let message = `📊 *Sentimeter Batched Updates*\n`;
+  message += `_(${updates.length} updates at ${new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })})_\n\n`;
+
+  for (const [status, groupUpdates] of grouped.entries()) {
+    const emoji = getStatusEmoji(status);
+    message += `${emoji} *${formatStatus(status)}*\n`;
+    for (const u of groupUpdates) {
+      // Create concise bullet points
+      message += `• ${u.ticker}: ${u.reason}\n`;
+    }
+    message += `\n`;
+  }
+
+  message += `_⚠️ Disclaimer: Prices may be delayed by up to 10 mins. Not financial advice. DYOR._`;
+
+  await sendTelegramNotification(message.trim());
 }
 
 async function notifyAnomaly(anomaly: AnomalyDetected, analysis: string) {
@@ -192,12 +228,14 @@ async function notifyAnomaly(anomaly: AnomalyDetected, analysis: string) {
     const message = `
 ${emoji} *${anomaly.ticker} Anomaly Detected*
 
-Type: ${anomaly.type}
-Value: ${anomaly.type === "PRICE" ? anomaly.value.toFixed(2) + "%" : anomaly.value}
-Message: ${anomaly.message}
+*Type:* ${anomaly.type}
+*Value:* ${anomaly.type === "PRICE" ? anomaly.value.toFixed(2) + "%" : anomaly.value}
+*Details:* ${anomaly.message}
 
 🤖 *AI Analysis:*
 ${analysis}
+
+_⚠️ Disclaimer: Prices may be delayed by up to 10 mins. Not financial advice. DYOR._
     `.trim();
 
     await sendTelegramNotification(message);
