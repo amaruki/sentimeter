@@ -8,6 +8,7 @@
 
 import { runDailyAnalysis } from "./daily-analysis.ts";
 import type { JobSchedule } from "../lib/database/types.ts";
+import { toWibLocaleString } from "../lib/wib.ts";
 
 const MORNING_HOUR = 7;
 const MORNING_MINUTE = 30;
@@ -125,7 +126,7 @@ export function startScheduler(): void {
 if (import.meta.main) {
   console.log(`\n${"=".repeat(60)}`);
   console.log("  SENTIMETER JOB SCHEDULER");
-  console.log(`  Started: ${new Date().toISOString()}`);
+  console.log(`  Started: ${toWibLocaleString(new Date())}`);
   console.log(`${"=".repeat(60)}`);
 
   startScheduler();

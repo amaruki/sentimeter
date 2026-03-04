@@ -19,6 +19,7 @@ export function formatPercent(value: number | null): string {
 
 export function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("id-ID", {
+    timeZone: "Asia/Jakarta",
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -27,6 +28,7 @@ export function formatDate(dateStr: string): string {
 
 export function formatDateTime(dateStr: string): string {
   return new Date(dateStr).toLocaleString("id-ID", {
+    timeZone: "Asia/Jakarta",
     day: "numeric",
     month: "short",
     year: "numeric",

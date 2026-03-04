@@ -246,7 +246,7 @@ function ConfigContent() {
             </div>
             {config?.scheduler?.nextRun && (
               <p className="text-xs text-gray-400 mt-2">
-                Next run: {new Date(config.scheduler.nextRun).toLocaleString("id-ID")}
+                Next run: {new Date(config.scheduler.nextRun).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })}
               </p>
             )}
           </Card>

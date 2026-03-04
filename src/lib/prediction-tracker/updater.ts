@@ -19,6 +19,7 @@ import {
 } from "../database/queries.ts";
 import type { Recommendation } from "../database/types.ts";
 import { fetchMultipleQuotes, fetchCurrentQuote, mapYahooQuoteToStockQuote } from "../market-data/index.ts";
+import { getWibDateString } from "../wib.ts";
 
 /**
  * Update all active predictions with current prices
@@ -175,7 +176,7 @@ function transformToTracked(rec: Recommendation, currentPrice: number): TrackedP
  * Get prediction summary for a date
  */
 export function getPredictionSummary(date?: string): PredictionSummary {
-  const targetDate = date ?? new Date().toISOString().slice(0, 10);
+  const targetDate = date ?? getWibDateString();
   const recs = getRecommendationsByDate(targetDate);
   const activeRecs = getActiveRecommendations();
 
@@ -184,7 +185,7 @@ export function getPredictionSummary(date?: string): PredictionSummary {
   const entryHit = activeRecs.filter((r) => r.status === "entry_hit").length;
 
   // Count closed today
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getWibDateString();
   const closedToday = recs.filter(
     (r) =>
       r.exitDate === today &&

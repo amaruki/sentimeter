@@ -84,6 +84,7 @@ export function Navigation() {
           <div className="flex items-center gap-4">
             <span className="hidden sm:block text-sm text-gray-500">
               {new Date().toLocaleDateString("id-ID", {
+                timeZone: "Asia/Jakarta",
                 weekday: "long",
                 day: "numeric",
                 month: "long",
@@ -178,6 +179,7 @@ export function Navigation() {
             <div className="flex items-center px-4">
               <span className="text-sm font-medium text-gray-500">
                 {new Date().toLocaleDateString("id-ID", {
+                  timeZone: "Asia/Jakarta",
                   weekday: "long",
                   day: "numeric",
                   month: "long",
