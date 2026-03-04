@@ -56,6 +56,7 @@ export interface StatusUpdate {
   price: number;
   reason: string;
   timestamp: Date;
+  recommendationDate: string; // YYYY-MM-DD, date the prediction was added
 }
 
 export interface TrackingResult {

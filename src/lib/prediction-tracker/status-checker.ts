@@ -15,7 +15,7 @@ export function checkStatusChange(
   prediction: TrackedPrediction,
   currentPrice: number
 ): StatusUpdate | null {
-  const { id, ticker, status, entryPrice, stopLoss, targetPrice, maxHoldDays, daysActive } =
+  const { id, ticker, status, entryPrice, stopLoss, targetPrice, maxHoldDays, daysActive, recommendationDate } =
     prediction;
 
   // Already closed - no changes possible
@@ -41,6 +41,7 @@ export function checkStatusChange(
         price: currentPrice,
         reason: `Entry price ${entryPrice} reached at ${currentPrice}`,
         timestamp: new Date(),
+        recommendationDate,
       };
     }
 
@@ -54,6 +55,7 @@ export function checkStatusChange(
         price: currentPrice,
         reason: `Pending entry not hit after ${daysActive} days (limit: ${STALE_PENDING_DAYS})`,
         timestamp: new Date(),
+        recommendationDate,
       };
     }
 
@@ -67,6 +69,7 @@ export function checkStatusChange(
         price: currentPrice,
         reason: `Max hold days (${maxHoldDays}) exceeded without entry`,
         timestamp: new Date(),
+        recommendationDate,
       };
     }
 
@@ -85,6 +88,7 @@ export function checkStatusChange(
         price: currentPrice,
         reason: `Stop loss ${stopLoss} triggered at ${currentPrice}`,
         timestamp: new Date(),
+        recommendationDate,
       };
     }
 
@@ -98,6 +102,7 @@ export function checkStatusChange(
         price: currentPrice,
         reason: `Target price ${targetPrice} reached at ${currentPrice}`,
         timestamp: new Date(),
+        recommendationDate,
       };
     }
 
@@ -111,6 +116,7 @@ export function checkStatusChange(
         price: currentPrice,
         reason: `Max hold days (${maxHoldDays}) exceeded, exiting at ${currentPrice}`,
         timestamp: new Date(),
+        recommendationDate,
       };
     }
 
