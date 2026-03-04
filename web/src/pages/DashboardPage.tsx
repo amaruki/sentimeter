@@ -151,7 +151,7 @@ export function DashboardPage() {
           </h1>
           <p className="text-gray-500">
             {data.schedule === "morning" ? "Morning" : "Evening"} session -{" "}
-            {currentTime.toLocaleTimeString("id-ID")}
+            {currentTime.toLocaleTimeString("id-ID", { timeZone: "Asia/Jakarta" })}
             {isConnected && (
               <span className="ml-2 text-success-600 text-xs font-medium px-2 bg-success-50 rounded-full animate-pulse">
                 ● Live

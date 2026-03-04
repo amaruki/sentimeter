@@ -155,6 +155,7 @@ export function SummaryTable({ recommendations, activePositions, date }: Summary
   const pagedRows = rows.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   const formattedDate = new Date(date).toLocaleDateString("id-ID", {
+    timeZone: "Asia/Jakarta",
     weekday: "short",
     day: "numeric",
     month: "short",

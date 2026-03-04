@@ -66,7 +66,7 @@ export function LogPanel({ logs, connected, visible = false }: LogPanelProps) {
             <div key={index} className={`${levelStyles[log.level]} flex gap-2`}>
               <span className="flex-shrink-0">{levelIcons[log.level]}</span>
               <span className="text-gray-500 flex-shrink-0">
-                {new Date(log.timestamp).toLocaleTimeString("id-ID")}
+                {new Date(log.timestamp).toLocaleTimeString("id-ID", { timeZone: "Asia/Jakarta" })}
               </span>
               {log.step && log.totalSteps && (
                 <span className="text-blue-400 flex-shrink-0">

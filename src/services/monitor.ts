@@ -177,7 +177,7 @@ async function notifyBatchedStatusChanges(updates: StatusUpdate[]) {
     const update = updates[0];
     if (!update) return;
     const emoji = getStatusEmoji(update.newStatus);
-    const time = update.timestamp.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+    const time = update.timestamp.toLocaleTimeString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit" });
 
     const message = `
 ${emoji} *${update.ticker} Status Update*
@@ -206,7 +206,7 @@ _⚠️ Disclaimer: Prices may be delayed by up to 10 mins. Not financial advice
   }
 
   let message = `📊 *Sentimeter Batched Updates*\n`;
-  message += `_(${updates.length} updates at ${new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })})_\n\n`;
+  message += `_(${updates.length} updates at ${new Date().toLocaleTimeString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit" })})_\n\n`;
 
   for (const [status, groupUpdates] of grouped.entries()) {
     const emoji = getStatusEmoji(status);

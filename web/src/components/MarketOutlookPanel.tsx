@@ -111,7 +111,7 @@ export function MarketOutlookPanel({ data }: MarketOutlookProps) {
       )}
 
       <div className="mt-3 text-xs text-gray-400 text-right">
-        Generated: {new Date(data.generatedAt).toLocaleString("id-ID")}
+        Generated: {new Date(data.generatedAt).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })}
       </div>
     </Card>
   );

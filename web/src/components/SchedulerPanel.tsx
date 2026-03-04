@@ -27,21 +27,19 @@ export function SchedulerPanel({ state, loading, onToggle }: SchedulerPanelProps
           </p>
           {state.enabled && state.nextRun && (
             <p className="text-xs text-gray-400 mt-1">
-              Next: {new Date(state.nextRun).toLocaleString("id-ID")}
+              Next: {new Date(state.nextRun).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })}
             </p>
           )}
         </div>
         <button
           onClick={onToggle}
           disabled={loading}
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-            state.enabled ? "bg-green-500" : "bg-gray-300"
-          } ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${state.enabled ? "bg-green-500" : "bg-gray-300"
+            } ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
         >
           <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-              state.enabled ? "translate-x-6" : "translate-x-1"
-            }`}
+            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${state.enabled ? "translate-x-6" : "translate-x-1"
+              }`}
           />
         </button>
       </div>

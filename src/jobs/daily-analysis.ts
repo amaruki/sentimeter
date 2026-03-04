@@ -33,6 +33,7 @@ import {
 import type { JobSchedule } from "../lib/database/types.ts";
 import { initDatabase } from "../lib/database/schema.ts";
 import { getStepCache, setStepCache, getResumeStep, clearStepCache } from "../lib/step-cache.ts";
+import { getWibDateString, getWibHour, toWibLocaleString } from "../lib/wib.ts";
 
 const MIN_OVERALL_SCORE = 65;
 const MAX_RECOMMENDATIONS_PER_RUN = 5;
@@ -57,7 +58,7 @@ interface JobResult {
 }
 
 export async function runDailyAnalysis(schedule: JobSchedule, force: boolean = false): Promise<JobResult> {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getWibDateString();
   const errors: string[] = [];
 
   if (!force && hasJobRunToday(schedule)) {
@@ -334,12 +335,12 @@ if (import.meta.main) {
 
   const args = process.argv.slice(2);
   const force = args.includes("--force") || args.includes("-f");
-  const hour = new Date().getHours();
+  const hour = getWibHour();
   const schedule: JobSchedule = hour < 12 ? "morning" : "evening";
 
   console.log(`\n${"=".repeat(60)}`);
   console.log(`  SENTIMETER DAILY ANALYSIS - ${schedule.toUpperCase()}`);
-  console.log(`  ${new Date().toISOString()}`);
+  console.log(`  ${toWibLocaleString(new Date())}`);
   if (force) console.log(`  MODE: FORCE`);
   console.log(`${"=".repeat(60)}\n`);
 

@@ -6,6 +6,7 @@
  */
 
 import { db } from "./schema.ts";
+import { getWibDateString } from "../wib.ts";
 import type {
   NewsArticle,
   NewsArticleInsert,
@@ -233,11 +234,13 @@ export function getTodayRecommendations(): Recommendation[] {
       profit_loss_pct as profitLossPct,
       created_at as createdAt
     FROM recommendations
-    WHERE recommendation_date = date('now')
+    WHERE recommendation_date = $date
     ORDER BY overall_score DESC
   `);
 
-  return stmt.all() as Recommendation[];
+  const todayWib = getWibDateString();
+
+  return stmt.all({ $date: todayWib }) as Recommendation[];
 }
 
 export function getActiveRecommendations(): Recommendation[] {
@@ -312,7 +315,7 @@ export function updateRecommendationStatus(
   exitPrice?: number,
   profitLossPct?: number
 ): void {
-  const todayDate = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const todayDate = getWibDateString(); // YYYY-MM-DD in WIB
 
   if (status === "entry_hit") {
     const stmt = db.prepare(`
@@ -523,10 +526,10 @@ export function hasJobRunToday(schedule: string): boolean {
   const stmt = db.prepare(`
     SELECT 1 FROM job_executions
     WHERE schedule = $schedule
-      AND execution_date = date('now')
+      AND execution_date = $date
       AND status = 'completed'
     LIMIT 1
   `);
 
-  return stmt.get({ $schedule: schedule }) !== null;
+  return stmt.get({ $schedule: schedule, $date: getWibDateString() }) !== null;
 }
