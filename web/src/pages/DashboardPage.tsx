@@ -3,12 +3,10 @@
  */
 
 import {
-  Card,
   LoadingState,
   ErrorState,
   EmptyState,
   StatsCard,
-  LogPanel,
   SummaryTable, AvoidSection, MarketOutlookPanel,
   useToast,
   TelegramCallToAction,
@@ -17,8 +15,6 @@ import { RecommendationCard } from "@/components/RecommendationCard";
 import { ActivePositionCard } from "@/components/ActivePositionCard";
 import {
   useRecommendations,
-  useRefresh,
-  useLogStream,
   useWebSocket,
   useAvoidList, useMarketOutlook, formatPercent,
   useHistory,
@@ -29,8 +25,6 @@ import { useState, useEffect, useCallback } from "react";
 
 export function DashboardPage() {
   const { data, loading, error, refetch } = useRecommendations();
-  const { trigger, loading: refreshing, result: refreshResult } = useRefresh();
-  const { logs, connected } = useLogStream();
   const { showToast } = useToast();
 
   const [activePositions, setActivePositions] = useState<ActivePositionItem[]>([]);
@@ -159,46 +153,7 @@ export function DashboardPage() {
             )}
           </p>
         </div>
-        <button
-          onClick={() => void trigger()}
-          disabled={refreshing}
-          className="btn-primary flex items-center gap-2"
-        >
-          {refreshing ? (
-            <>
-              <span className="animate-spin">⟳</span> Refreshing...
-            </>
-          ) : (
-            <>
-              <span>↻</span> Refresh Analysis
-            </>
-          )}
-        </button>
       </div>
-
-      {refreshResult && (
-        <Card
-          className={
-            refreshResult.triggered
-              ? "bg-success-50 border-success-200"
-              : "bg-warning-50 border-warning-200"
-          }
-        >
-          <p
-            className={
-              refreshResult.triggered ? "text-success-700" : "text-warning-700"
-            }
-          >
-            {refreshResult.message}
-          </p>
-        </Card>
-      )}
-
-      <LogPanel
-        logs={logs}
-        connected={connected}
-        visible={true}
-      />
 
       {outlookData && <MarketOutlookPanel data={outlookData} />}
 
