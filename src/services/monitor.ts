@@ -178,6 +178,8 @@ async function notifyBatchedStatusChanges(updates: StatusUpdate[]) {
     if (!update) return;
     const emoji = getStatusEmoji(update.newStatus);
     const time = update.timestamp.toLocaleTimeString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit" });
+    const addedDate = formatWibDate(update.recommendationDate);
+    const addedAgo = humanDuration(update.recommendationDate);
 
     const message = `
 ${emoji} *${update.ticker} Status Update*
@@ -186,7 +188,8 @@ ${emoji} *${update.ticker} Status Update*
 *New:* ${formatStatus(update.newStatus)}
 
 💰 *Price:* ${update.price}
-⏱ *Time:* ${time}
+⏱ *Time:* ${time} WIB
+📅 *Entry Added:* ${addedDate} _(${addedAgo})_
 
 📝 *Details:* ${update.reason}
 
@@ -212,8 +215,10 @@ _⚠️ Disclaimer: Prices may be delayed by up to 10 mins. Not financial advice
     const emoji = getStatusEmoji(status);
     message += `${emoji} *${formatStatus(status)}*\n`;
     for (const u of groupUpdates) {
-      // Create concise bullet points
-      message += `• ${u.ticker}: ${u.reason}\n`;
+      const addedAgo = humanDuration(u.recommendationDate);
+      const addedDate = formatWibDate(u.recommendationDate);
+      message += `• *${u.ticker}*: ${u.reason}\n`;
+      message += `  📅 Ditambahkan: ${addedDate} _(${addedAgo})_\n`;
     }
     message += `\n`;
   }
@@ -258,4 +263,42 @@ function getStatusEmoji(status: PredictionStatus): string {
 
 function formatStatus(status: string): string {
   return status.replace(/_/g, " ").toUpperCase();
+}
+
+/**
+ * Format a YYYY-MM-DD recommendation date as a WIB date+time string.
+ * Since recommendationDate is only a date (no time component),
+ * we display just the date in WIB locale.
+ */
+function formatWibDate(dateStr: string): string {
+  // Parse as midnight WIB (UTC+7)
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const date = new Date(Date.UTC(year!, month! - 1, day!, 0, 0, 0) - 7 * 3600000); // midnight WIB → UTC
+  return date.toLocaleDateString("id-ID", {
+    timeZone: "Asia/Jakarta",
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+/**
+ * Return a human-readable duration from a YYYY-MM-DD date string to now.
+ * Examples: "hari ini", "kemarin", "2 hari lalu", "1 minggu lalu"
+ */
+function humanDuration(dateStr: string): string {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  // Midnight WIB
+  const addedMs = Date.UTC(year!, month! - 1, day!, 0, 0, 0) - 7 * 3600000;
+  const diffMs = Date.now() - addedMs;
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return "hari ini";
+  if (diffDays === 1) return "kemarin";
+  if (diffDays < 7) return `${diffDays} hari lalu`;
+  if (diffDays < 14) return "1 minggu lalu";
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} minggu lalu`;
+  if (diffDays < 60) return "1 bulan lalu";
+  return `${Math.floor(diffDays / 30)} bulan lalu`;
 }
