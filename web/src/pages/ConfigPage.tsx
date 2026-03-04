@@ -10,10 +10,11 @@ import {
   ErrorState,
   SchedulerPanel,
   Card,
+  LogPanel,
   useToast,
   AdminGuard,
 } from "@/components";
-import { useScheduler, useConfig, patchConfig, type AppConfig, type ConfigPatch } from "@/lib";
+import { useScheduler, useConfig, patchConfig, useRefresh, useLogStream, type AppConfig, type ConfigPatch } from "@/lib";
 
 function ConfigSection({
   title,
@@ -90,6 +91,8 @@ function ConfigContent() {
     toggle: toggleScheduler,
   } = useScheduler();
   const { data: config, loading: configLoading, error: configError, refetch } = useConfig();
+  const { trigger, loading: refreshing, result: refreshResult } = useRefresh();
+  const { logs, connected } = useLogStream();
   const { showToast } = useToast();
 
   const [saving, setSaving] = useState(false);
@@ -272,6 +275,49 @@ function ConfigContent() {
             hint="Alert when volume exceeds average × this factor."
           />
         </Card>
+      </ConfigSection>
+
+      <ConfigSection title="Manual analysis" subtitle="Trigger a full analysis pipeline run.">
+        <Card>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <p className="text-sm text-gray-600">
+                Run the daily analysis pipeline manually. This will crawl news, extract tickers, and generate recommendations.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void trigger()}
+              disabled={refreshing}
+              className="btn-primary flex items-center gap-2 whitespace-nowrap"
+            >
+              {refreshing ? (
+                <>
+                  <span className="animate-spin">⟳</span> Refreshing...
+                </>
+              ) : (
+                <>
+                  <span>↻</span> Refresh Analysis
+                </>
+              )}
+            </button>
+          </div>
+
+          {refreshResult && (
+            <div
+              className={`mt-3 p-3 rounded-lg text-sm ${refreshResult.triggered
+                  ? "bg-success-50 text-success-700"
+                  : "bg-warning-50 text-warning-700"
+                }`}
+            >
+              {refreshResult.message}
+            </div>
+          )}
+        </Card>
+
+        <div className="mt-4">
+          <LogPanel logs={logs} connected={connected} visible={true} />
+        </div>
       </ConfigSection>
     </div>
   );
